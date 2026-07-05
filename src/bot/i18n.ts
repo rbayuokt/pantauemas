@@ -241,21 +241,37 @@ const MESSAGES = {
     en: '📊 <b>{size} check</b> · {date}',
     id: '📊 <b>Cek {size}</b> · {date}',
   },
+  analyze_sec_price: {
+    en: "💰 <b>Today's price</b>",
+    id: '💰 <b>Harga hari ini</b>',
+  },
   analyze_price_line: {
-    en: 'Price: {price} · buyback {buyback} (spread {spread})',
-    id: 'Harga: {price} · buyback {buyback} (spread {spread})',
+    en: '• Buy: {price}\n• Buyback: {buyback} (spread {spread})',
+    id: '• Beli: {price}\n• Buyback: {buyback} (spread {spread})',
+  },
+  analyze_sec_range: {
+    en: '📈 <b>Last 90 days</b>',
+    id: '📈 <b>90 hari terakhir</b>',
   },
   analyze_range_line: {
-    en: '90-day range: {low} – {high}',
-    id: 'Rentang 90 hari: {low} – {high}',
+    en: '• Range: {low} – {high}',
+    id: '• Rentang: {low} – {high}',
+  },
+  analyze_range_gauge: {
+    en: '<code>cheap {bar} pricey</code>',
+    id: '<code>murah {bar} mahal</code>',
   },
   analyze_off_high: {
-    en: 'Now {drop} below the 14-day high',
-    id: 'Sekarang {drop} di bawah tertinggi 14 hari',
+    en: '{drop} below the 14-day high',
+    id: '{drop} di bawah tertinggi 14 hari',
+  },
+  analyze_sec_world: {
+    en: '🌍 <b>World market</b>',
+    id: '🌍 <b>Pasar dunia</b>',
   },
   analyze_signals_title: {
-    en: '<b>Buy signals: {score}/{max}</b>',
-    id: '<b>Sinyal beli: {score}/{max}</b>',
+    en: '🎯 <b>Buy signals: {score}/{max}</b>',
+    id: '🎯 <b>Sinyal beli: {score}/{max}</b>',
   },
   analyze_sig_percentile: {
     en: 'Cheaper than most of the last 90 days',
@@ -288,6 +304,10 @@ const MESSAGES = {
   analyze_world: {
     en: 'World gold {gold}/oz · USD/IDR {fx}',
     id: 'Emas dunia {gold}/oz · kurs USD/IDR {fx}',
+  },
+  analyze_confidence: {
+    en: 'Buy confidence: <b>{pct}</b> <code>{bar}</code>',
+    id: 'Tingkat keyakinan beli: <b>{pct}</b> <code>{bar}</code>',
   },
   analyze_no_history: {
     en: 'I don\'t have enough price history for this size yet to judge the timing. Give me a few days of watching and ask again 🙏',

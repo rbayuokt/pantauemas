@@ -46,6 +46,7 @@ test('timing report calls the bottom of a falling series a good buy', () => {
   assert.equal(timing.maxScore, 4)
   assert.equal(timing.score, 4)
   assert.equal(timing.timing, 'good')
+  assert.ok(timing.confidencePct !== null && timing.confidencePct >= 75)
 })
 
 test('timing report says wait at the top of a rising series', () => {
@@ -53,6 +54,7 @@ test('timing report says wait at the top of a rising series', () => {
   assert.ok(timing.rangePosPct !== null && timing.rangePosPct > 99)
   assert.equal(timing.score, 0)
   assert.equal(timing.timing, 'wait')
+  assert.ok(timing.confidencePct !== null && timing.confidencePct <= 15)
 })
 
 test('timing report gives no verdict on short history', () => {
@@ -60,6 +62,7 @@ test('timing report gives no verdict on short history', () => {
   assert.ok(timing.maxScore < 3)
   assert.equal(timing.timing, null)
   assert.equal(timing.low90, null)
+  assert.equal(timing.confidencePct, null)
 })
 
 test('driver returns raw changes for the copy layer to render', () => {

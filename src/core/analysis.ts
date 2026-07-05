@@ -109,5 +109,27 @@ export function buildTimingReport(daily: DayPrice[], current: SizePrice, driver?
     else timing = 'wait'
   }
 
-  return { report, low90, high90, rangePosPct, dropFromHigh14Pct, signals, score, maxScore, timing }
+  // Continuous companion to the yes/no signals: each component is the same
+  // statistic mapped onto 0-100, blended by weight. 100 = today is at its
+  // cheapest by every measure; 0 = pricier than everything recorded.
+  const clamp = (x: number) => Math.min(100, Math.max(0, x))
+  const components: Array<{ value: number; weight: number }> = []
+  if (report.cheaperThanPct !== null) components.push({ value: report.cheaperThanPct, weight: 0.4 })
+  if (rangePosPct !== null) components.push({ value: clamp(100 - rangePosPct), weight: 0.3 })
+  if (report.ma7 !== null) {
+    // ±2% around the 7-day average maps to 0-100, at the average = 50.
+    const belowMa7Pct = ((report.ma7 - current.price) / report.ma7) * 100
+    components.push({ value: clamp(50 + (belowMa7Pct / 2) * 50), weight: 0.15 })
+  }
+  if (dropFromHigh14Pct !== null) {
+    // A 3%+ drop off the 14-day high counts as a full-strength dip.
+    components.push({ value: clamp((dropFromHigh14Pct / 3) * 100), weight: 0.15 })
+  }
+  let confidencePct: number | null = null
+  if (timing !== null && components.length) {
+    const totalWeight = components.reduce((a, c) => a + c.weight, 0)
+    confidencePct = components.reduce((a, c) => a + c.value * c.weight, 0) / totalWeight
+  }
+
+  return { report, low90, high90, rangePosPct, dropFromHigh14Pct, signals, score, maxScore, timing, confidencePct }
 }

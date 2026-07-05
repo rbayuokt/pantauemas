@@ -53,12 +53,20 @@ restarts mid-wizard, the user just taps /watch again; nothing breaks.
 ## The /analyze view
 
 Same brand/size picker as /watch, but instead of setting a target it answers
-"is now a decent time to buy?" with statistics only, no prediction:
+"is now a decent time to buy?" with statistics only, no prediction. The
+message leads with the verdict and a buy-confidence percentage, then breaks
+the detail into scannable sections (💰 price, 📈 last 90 days with a text
+gauge of where today sits in the range, 🌍 world market, 🎯 signals):
 
-- Context lines: current price and spread, the 90-day low/high, the
-  cheaper-than percentile, the 7d-vs-30d trend, and how far today sits below
-  the 14-day high. With `METALPRICE_API_KEY` set, also world gold and USD/IDR
-  with a day-over-day "mover" attribution - read from the daily snapshot the
+- Buy confidence: a 0-100% blend of the same statistics behind the signals -
+  cheaper-than percentile (40%), position in the 90-day range (30%), distance
+  from the 7-day average (15%), and dip depth off the 14-day high (15%).
+  Continuous where the checklist is yes/no, so two "3/4" days can still read
+  62% vs 85%.
+- Context: current price and spread, the 90-day low/high, the cheaper-than
+  percentile, the 7d-vs-30d trend, and how far today sits below the 14-day
+  high. With `METALPRICE_API_KEY` set, also world gold and USD/IDR with a
+  day-over-day "mover" attribution - read from the daily snapshot the
   scheduler stores, never fetched per tap (the free plan is 100 calls/month;
   see [configuration](configuration.md)).
 - A checklist of four yes/no signals, each shown with a ✅/⬜ so the verdict is

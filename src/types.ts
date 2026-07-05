@@ -100,4 +100,10 @@ export interface TimingReport {
   score: number
   maxScore: number
   timing: 'good' | 'ok' | 'wait' | null
+  /**
+   * 0-100 "how much does today look like a buy day", a weighted blend of the
+   * same statistics behind the signals (percentile, range position, momentum,
+   * dip depth). Null whenever timing is null.
+   */
+  confidencePct: number | null
 }

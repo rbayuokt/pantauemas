@@ -131,6 +131,12 @@ const SIGNAL_KEY: Record<TimingSignal['key'], MessageKey> = {
   dip: 'analyze_sig_dip',
 }
 
+/** 10-segment gauge of where today sits in the 90-day range (left = cheap). */
+function rangeGauge(posPct: number): string {
+  const filled = Math.round(Math.min(100, Math.max(0, posPct)) / 10)
+  return '▓'.repeat(filled) + '░'.repeat(10 - filled)
+}
+
 export function analyzeMessage(
   lang: Lang,
   brand: Brand,
@@ -140,34 +146,59 @@ export function analyzeMessage(
   spot?: { goldUsd: number; usdidr: number } | null,
 ): string {
   const r = timing.report
-  const lines = [t(lang, 'analyze_title', { size: comboLabel(brand, size.gramasi), date: wibDateLabel(lang) })]
-  lines.push(t(lang, 'analyze_price_line', { price: rupiah(size.price), buyback: rupiah(size.buybackPrice), spread: pct(r.spreadPct, lang) }))
+  // Answer first: title, verdict, then the sections for whoever wants detail.
+  const blocks = [t(lang, 'analyze_title', { size: comboLabel(brand, size.gramasi), date: wibDateLabel(lang) })]
+
+  const verdictKey =
+    timing.timing === 'good' ? ('analyze_verdict_good' as const)
+    : timing.timing === 'ok' ? ('analyze_verdict_ok' as const)
+    : timing.timing === 'wait' ? ('analyze_verdict_wait' as const)
+    : null
+  if (verdictKey) {
+    const verdict = [t(lang, verdictKey)]
+    if (timing.confidencePct !== null) {
+      verdict.push(t(lang, 'analyze_confidence', {
+        pct: pct(timing.confidencePct, lang, 0),
+        bar: rangeGauge(timing.confidencePct),
+      }))
+    }
+    blocks.push(verdict.join('\n'))
+  } else {
+    blocks.push(t(lang, 'analyze_no_history'))
+  }
+
+  blocks.push([
+    t(lang, 'analyze_sec_price'),
+    t(lang, 'analyze_price_line', { price: rupiah(size.price), buyback: rupiah(size.buybackPrice), spread: pct(r.spreadPct, lang) }),
+  ].join('\n'))
+
+  const range: string[] = []
   if (timing.low90 !== null && timing.high90 !== null) {
-    lines.push(t(lang, 'analyze_range_line', { low: rupiah(timing.low90), high: rupiah(timing.high90) }))
+    range.push(t(lang, 'analyze_range_line', { low: rupiah(timing.low90), high: rupiah(timing.high90) }))
+    if (timing.rangePosPct !== null) range.push('  ' + t(lang, 'analyze_range_gauge', { bar: rangeGauge(timing.rangePosPct) }))
   }
-  if (r.cheaperThanPct !== null) lines.push(t(lang, 'digest_cheaper', { pct: pct(r.cheaperThanPct, lang, 0), days: r.sampleDays }))
-  if (r.trend) lines.push(t(lang, `digest_trend_${r.trend}` as const))
+  if (r.cheaperThanPct !== null) range.push('• ' + t(lang, 'digest_cheaper', { pct: pct(r.cheaperThanPct, lang, 0), days: r.sampleDays }))
+  if (r.trend) range.push('• ' + t(lang, `digest_trend_${r.trend}` as const))
   if (timing.dropFromHigh14Pct !== null && timing.dropFromHigh14Pct >= 0.05) {
-    lines.push(t(lang, 'analyze_off_high', { drop: pct(timing.dropFromHigh14Pct, lang) }))
+    range.push('• ' + t(lang, 'analyze_off_high', { drop: pct(timing.dropFromHigh14Pct, lang) }))
   }
+  if (range.length) blocks.push([t(lang, 'analyze_sec_range'), ...range].join('\n'))
+
+  const world: string[] = []
   if (spot) {
-    lines.push(t(lang, 'analyze_world', {
+    world.push('• ' + t(lang, 'analyze_world', {
       gold: '$' + Math.round(spot.goldUsd).toLocaleString('en-US'),
       fx: rupiah(spot.usdidr),
     }))
   }
-  if (r.driver) lines.push(driverLine(lang, r.driver.goldChangePct, r.driver.fxChangePct))
-  const blocks = [lines.join('\n')]
+  if (r.driver) world.push('• ' + driverLine(lang, r.driver.goldChangePct, r.driver.fxChangePct))
+  if (world.length) blocks.push([t(lang, 'analyze_sec_world'), ...world].join('\n'))
 
   if (timing.timing !== null) {
     const checklist = [t(lang, 'analyze_signals_title', { score: timing.score, max: timing.maxScore })]
     for (const s of timing.signals) checklist.push(`${s.pass ? '✅' : '⬜'} ${t(lang, SIGNAL_KEY[s.key])}`)
     blocks.push(checklist.join('\n'))
   }
-  if (timing.timing === 'good') blocks.push(t(lang, 'analyze_verdict_good'))
-  else if (timing.timing === 'ok') blocks.push(t(lang, 'analyze_verdict_ok'))
-  else if (timing.timing === 'wait') blocks.push(t(lang, 'analyze_verdict_wait'))
-  else blocks.push(t(lang, 'analyze_no_history'))
 
   blocks.push(`${sourceLine(lang, [source])}\n${t(lang, 'analyze_footnote')}`)
   return blocks.join('\n\n')
