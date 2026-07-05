@@ -60,8 +60,9 @@ last as buyback. Note the fallback prices are EmasKITA-branded bars, not EMASKU.
 They are close cousins from the same refiner, usually within a rupiah rounding of each
 other, and the CSV records which source each row came from.
 
-If both sources fail, the tick logs the error and gives up until the next
-scheduled slot; the bot itself keeps running.
+If both EMASKU sources fail, the tick logs the error and carries on with the
+Antam chain alone; the EMASKU series resumes at the next successful slot, and
+the bot itself keeps running.
 
 ## Antam prices (four sources)
 

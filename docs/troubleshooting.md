@@ -29,10 +29,11 @@ harmless.
 - Dip alerts specifically need 3+ days of history for that size. Run
   `backfill` if the database is fresh.
 
-## Both price sources failing
+## Both EMASKU sources failing
 
 `HRTA failed (...), falling back to EmasKITA` followed by an EmasKITA error
-means no prices this tick; the scheduler retries at the next slot. To diagnose:
+means no EMASKU prices this tick (Antam has its own chain, next section); the
+scheduler retries at the next slot. To diagnose:
 
 ```sh
 curl -s -A "Mozilla/5.0" https://hrtagold.id/api/v1/brandings/price/daily | head -c 300

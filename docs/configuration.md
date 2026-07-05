@@ -15,7 +15,7 @@ anymore; users manage those themselves in the chat.
 
 | Var | Default | Notes |
 |---|---|---|
-| `TICK_TIMES` | `09:15,12:15,17:15` | Comma-separated `HH:MM` price checks. HRTA publishes late morning, so one tick before, one after, one end-of-day is a sensible spread. |
+| `TICK_TIMES` | `09:15,12:15,17:15` | Comma-separated `HH:MM` price checks. Logam Mulia updates ~08:30 WIB and HRTA late morning, so one tick before the HRTA update, one after, one end-of-day is a sensible spread. |
 | `DIGEST_TIME` | `08:00` | The silent morning summary, sent to every user who keeps /digest on. |
 
 A tick also runs immediately at startup, so a restart never misses the day's

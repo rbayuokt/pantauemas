@@ -14,6 +14,8 @@ flowchart LR
         TG[Telegram users]
         HRTA[HRTA Gold API]
         EK[EmasKITA page]
+        LM[Logam Mulia via Jina Reader]
+        SHOPS[IndoGold / Galeri 24 / Aneka Logam]
         Y[Yahoo Finance GC=F + IDR=X]
     end
 
@@ -22,7 +24,7 @@ flowchart LR
         SCHED[WIB scheduler] --> TICK[tick job]
         SCHED --> DIG[digest job]
         TICK --> LADDER[per-user ladders]
-        TICK --> DIP[dip detector per size]
+        TICK --> DIP[dip detector per brand+size]
         DIG --> AN[cheapness analysis]
     end
 
@@ -32,6 +34,8 @@ flowchart LR
     H <--> DB
     HRTA --> TICK
     EK -. fallback .-> TICK
+    LM --> TICK
+    SHOPS -- buyback + fallback --> TICK
     Y --> AN
     TICK <--> DB
     DIG <--> DB
@@ -112,15 +116,17 @@ few requests a day it uses for one.
 ## Storage
 
 SQLite via `node:sqlite` (built into Node 22.5+, no npm package, WAL mode).
-Five tables:
+Seven tables:
 
 | Table | What lives there |
 |---|---|
-| `users` | chat id, language, digest on/off |
-| `watches` | one row per rung: size, target, fired state |
-| `prices` | one row per day per size, real observed prices |
-| `backfill` | synthetic history per size, regenerated wholesale |
-| `dip_state` | one row per size: the current dip episode, if any |
+| `users` | chat id, language, digest on/off, ntfy topic |
+| `watches` | one row per rung: brand, size, target, fired state |
+| `prices` | one row per day per brand+size, real observed prices, with `source` (and `buyback_source` for merged Antam quotes) |
+| `backfill` | synthetic history per brand+size, regenerated wholesale |
+| `spot` | one row per WIB day: world gold + USD/IDR snapshot (metalpriceapi) |
+| `spot_calls` | per-month ledger of metalpriceapi attempts, the quota failsafe |
+| `dip_state` | one row per brand+size: the current dip episode, if any |
 
 Everything is in `data/pantauemas.db`, one file to mount, one file to back up.
 
@@ -128,6 +134,9 @@ Everything is in `data/pantauemas.db`, one file to mount, one file to back up.
 
 - HRTA down or changed → automatic fallback to the EmasKITA scraper; the
   source is recorded per price row.
+- Official Logam Mulia down (or its Jina proxy) → the best shop quote
+  (IndoGold → Galeri 24 → Aneka Logam) is used wholesale. Every Antam source
+  down → the brand skips the round; EMASKU alerts are unaffected.
 - Yahoo down → the digest goes out without the driver line instead of failing.
 - A user blocked the bot → their send fails, gets logged, the loop moves on.
 - Telegram polling hiccup → logged, 5s backoff, retry forever. A 409 loop is

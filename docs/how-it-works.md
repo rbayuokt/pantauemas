@@ -9,16 +9,22 @@ thresholds. Numbers in parentheses are defaults; all tunable via env vars
 A tick runs a few times a day (09:15, 12:15, 17:15 WIB) plus once at process
 start, and does four things:
 
-1. **Fetch prices.** HRTA Gold API first; if that throws, the EmasKITA page.
-   One call carries every bar size.
-2. **Store them.** One row per day per size in the `prices` table (same-day
-   re-checks replace the row). HRTA publishes once a day, so most ticks
-   rewrite identical numbers; the extra ticks exist to catch the daily update
-   early, not to collect intraday data.
+1. **Fetch prices.** One market fetch covers both brands. EMASKU: the HRTA
+   Gold API first; if that throws, the EmasKITA page. Antam: up to four
+   sources in parallel, merged into one quote — official Logam Mulia sell
+   prices plus buyback from the highest-priority shop that responded
+   (IndoGold → Galeri 24 → Aneka Logam); see
+   [data-sources.md](data-sources.md). A brand whose sources are all down is
+   skipped for the round without affecting the other.
+2. **Store them.** One row per day per brand and size in the `prices` table
+   (same-day re-checks replace the row), each recording where it came from
+   (`source`, and `buyback_source` for merged Antam quotes). Sources publish
+   once a day, so most ticks rewrite identical numbers; the extra ticks exist
+   to catch the daily update early, not to collect intraday data.
 3. **Walk every user's ladder.** See below. Users get at most one message per
-   size per tick, with all their crossed rungs combined.
-4. **Run the dip detector** per watched size, and notify watchers who didn't
-   already get a target hit for that size.
+   brand+size per tick, with all their crossed rungs combined.
+4. **Run the dip detector** per watched brand+size, and notify watchers who
+   didn't already get a target hit for that combo.
 
 ## Ladder targets
 
@@ -49,15 +55,16 @@ The ladder only knows the prices a user predicted. The dip detector
   The episode closes once the drop shrinks back under half the threshold.
 - Needs at least 3 days of history; before that it stays quiet.
 
-The episode is tracked **per bar size, not per user** (the price series is
-global, so the episode is too). Who gets the message is decided at send time:
-everyone watching that size, minus anyone who just got a target hit for it.
+The episode is tracked **per brand and bar size, not per user** (the price
+series is global, so the episode is too). Who gets the message is decided at
+send time: everyone watching that brand+size, minus anyone who just got a
+target hit for it.
 
 ## The morning digest
 
 Once a day (08:00 WIB), sent silently to every user who keeps /digest on and
-has at least one target. Each watched size gets a block, built by
-`core/analysis.ts` from that size's merged daily history (real rows win over
+has at least one target. Each watched brand+size gets a block, built by
+`core/analysis.ts` from that series' merged daily history (real rows win over
 backfilled ones on the same date):
 
 - **Cheaper-than %**: the share of the last (90) days with a higher price than
@@ -83,15 +90,16 @@ The analysis layer returns data; the rendering (and translation) happens in
 ## Backfill
 
 Percentiles over 90 days are useless on day one, so `backfill` manufactures
-history for **every size HRTA sells**:
+history for **every brand and size the market fetch returns** (all EMASKU bar
+sizes plus every Antam denomination):
 
 1. Fetch a year of daily closes for world gold (`GC=F`, USD/oz) and USD/IDR
    (`IDR=X`) from Yahoo.
 2. Convert to a raw IDR series per size: `close / 31.1034768 * fx * grams`.
-3. Scale each size's series so its latest day equals that size's real price
-   today. The per-size factor bakes in that size's retail premium (small bars
-   carry a visibly bigger premium per gram; at build time 0.1g ran ~29% over
-   raw metal value while 100g ran ~1%).
+3. Scale each series so its latest day equals that brand+size's real price
+   today. The factor bakes in that combo's retail premium (small bars carry a
+   visibly bigger premium per gram; at build time 0.1g ran ~29% over raw metal
+   value while 100g ran ~1%; Antam carries a brand premium over EMASKU).
 4. Write to the `backfill` table.
 
 Synthetic rows are only used where no real row exists for that date, so the
@@ -115,10 +123,11 @@ All state is SQLite at `data/pantauemas.db`. The interesting rows:
 
 ```
 users:     chat_id='123456789', lang='id', digest_enabled=1
-watches:   chat_id='123456789', gramasi=1, target=2450000, fired_at=NULL
-prices:    date='2026-07-05', gramasi=1, price=2504000, buyback=2376000, source='hrta'
-backfill:  date='2025-09-12', gramasi=1, price=2143210
-dip_state: gramasi=1, date='2026-07-12', price=2410000, ref_high=2465000
+watches:   chat_id='123456789', brand='antam', gramasi=1, target=2650000, fired_at=NULL
+prices:    date='2026-07-05', brand='emasku', gramasi=1, price=2504000, buyback=2376000, source='hrta'
+prices:    date='2026-07-05', brand='antam', gramasi=1, price=2670000, buyback=2604000, source='logammulia', buyback_source='indogold'
+backfill:  date='2025-09-12', brand='emasku', gramasi=1, price=2143210
+dip_state: brand='emasku', gramasi=1, date='2026-07-12', price=2410000, ref_high=2465000
 ```
 
 Wizard progress (waiting for a typed target price) is deliberately in memory
