@@ -86,10 +86,11 @@ The **merged quote** drives alerts, /watch and storage:
 
 The **raw per-source quotes** are kept alongside (`Market.sourceQuotes`) and
 power the display: /price lists a watched Antam size as its own block with
-every source, cheapest first (the full board does the same for every size),
-and /analyze adds a "today by source" section — same size quoted by every
-live source, cheapest first, plus who pays the best buyback. Watches and
-/analyze verdicts stay per-gram (1g) for Antam.
+every source (the full board does the same for every size), and /analyze adds
+a "today by source" section with each source's premium over the cheapest and
+who pays the best buyback. In both, the official Logam Mulia price is pinned
+first with a 🏛 badge, the rest sort cheapest first with the cheapest tagged.
+Watches and /analyze verdicts stay per-gram (1g) for Antam.
 
 ### Logam Mulia — official, via Jina Reader
 

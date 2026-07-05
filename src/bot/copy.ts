@@ -23,6 +23,16 @@ export function brandSources(bp: Pick<BrandPrices, 'source' | 'buybackSource'>):
   return bp.buybackSource && bp.buybackSource !== bp.source ? [bp.source, bp.buybackSource] : [bp.source]
 }
 
+/** The official source gets a badge so it's recognizable at a glance. */
+function decoratedSource(source: PriceSource): string {
+  return source === 'logammulia' ? `<b>🏛 ${sourceName(source)}</b>` : sourceName(source)
+}
+
+/** Sort for source lists: official pinned first, the rest cheapest first. */
+function byOfficialThenPrice(a: { source: PriceSource; price: number }, b: { source: PriceSource; price: number }): number {
+  return (a.source === 'logammulia' ? 0 : 1) - (b.source === 'logammulia' ? 0 : 1) || a.price - b.price
+}
+
 function sourceLine(lang: Lang, sources: PriceSource[]): string {
   const names = [...new Set(sources.map(sourceName))].join(', ')
   return t(lang, 'source_line', { source: names })
@@ -191,15 +201,15 @@ export function analyzeMessage(
 
   // Where to actually buy today: only worth a block when sources disagree.
   if (bySource && bySource.length >= 2) {
-    const sorted = [...bySource].sort((a, b) => a.price - b.price)
-    const cheapest = sorted[0]!
+    const sorted = [...bySource].sort(byOfficialThenPrice)
+    const cheapest = sorted.reduce((min, q) => (q.price < min.price ? q : min))
     const lines = [t(lang, 'analyze_sec_sources')]
     for (const q of sorted) {
       lines.push(
         q === cheapest
-          ? t(lang, 'analyze_src_line_cheapest', { source: sourceName(q.source), price: rupiah(q.price) })
+          ? t(lang, 'analyze_src_line_cheapest', { source: decoratedSource(q.source), price: rupiah(q.price) })
           : t(lang, 'analyze_src_line', {
-              source: sourceName(q.source),
+              source: decoratedSource(q.source),
               price: rupiah(q.price),
               diff: pct(((q.price - cheapest.price) / cheapest.price) * 100, lang),
             }),
@@ -246,8 +256,8 @@ export function analyzeMessage(
 
 /**
  * The compact view. A combo quoted by 2+ live sources (Antam) gets its own
- * block listing every source, cheapest first; single-source combos stay one
- * line with the usual source footer.
+ * block: official first, the rest cheapest first, cheapest tagged.
+ * Single-source combos stay one line; the footer lists every source shown.
  */
 export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: Brand; gramasi: number }>): string {
   const singles: string[] = []
@@ -264,23 +274,26 @@ export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: 
         return x ? [{ source: q.source, price: x.price, buybackPrice: x.buybackPrice }] : []
       })
     if (quotes.length >= 2) {
-      const sorted = [...quotes].sort((a, b) => a.price - b.price)
+      const sorted = [...quotes].sort(byOfficialThenPrice)
+      const cheapest = sorted.reduce((min, q) => (q.price < min.price ? q : min))
       const block = [t(lang, 'price_combo_sources', { size: comboLabel(combo.brand, combo.gramasi) })]
       for (const q of sorted) {
         const line =
           q.buybackPrice > 0
-            ? t(lang, 'price_src_line', { source: sourceName(q.source), price: rupiah(q.price), buyback: rupiah(q.buybackPrice) })
-            : t(lang, 'price_src_line_nobb', { source: sourceName(q.source), price: rupiah(q.price) })
-        block.push(q === sorted[0] ? `${line} ${t(lang, 'price_cheapest_tag')}` : line)
+            ? t(lang, 'price_src_line', { source: decoratedSource(q.source), price: rupiah(q.price), buyback: rupiah(q.buybackPrice) })
+            : t(lang, 'price_src_line_nobb', { source: decoratedSource(q.source), price: rupiah(q.price) })
+        block.push(q === cheapest ? `${line} ${t(lang, 'price_cheapest_tag')}` : line)
       }
       blocks.push(block.join('\n'))
+      for (const q of sorted) if (!footerSources.includes(q.source)) footerSources.push(q.source)
     } else {
       for (const src of brandSources(bp)) if (!footerSources.includes(src)) footerSources.push(src)
       singles.push(t(lang, 'price_line', { size: comboLabel(combo.brand, combo.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
     }
   }
-  const title = t(lang, 'price_title', { date: wibDateLabel(lang, market.fetchedAt) })
-  const parts = [singles.length ? `${title}\n${singles.join('\n')}` : title, ...blocks]
+  const parts = [t(lang, 'price_title', { date: wibDateLabel(lang, market.fetchedAt) })]
+  if (singles.length) parts.push(singles.join('\n'))
+  parts.push(...blocks)
   if (footerSources.length) parts.push(sourceLine(lang, footerSources))
   parts.push(t(lang, 'price_hint'))
   return parts.join('\n\n')
@@ -296,7 +309,7 @@ export function allPricesMessage(lang: Lang, market: Market): string {
   const blocks = [t(lang, 'price_all_title', { date: wibDateLabel(lang, market.fetchedAt) })]
   const quotes = market.sourceQuotes?.length ? market.sourceQuotes : market.brands
   for (const bp of quotes) {
-    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${sourceName(bp.source)}`]
+    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${decoratedSource(bp.source)}`]
     for (const s of [...bp.sizes].sort((a, b) => a.gramasi - b.gramasi)) {
       lines.push(
         s.buybackPrice > 0
