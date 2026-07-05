@@ -85,10 +85,11 @@ The **merged quote** drives alerts, /watch and storage:
    a buyback figure); EMASKU watches are unaffected.
 
 The **raw per-source quotes** are kept alongside (`Market.sourceQuotes`) and
-power the display: the full /price board lists Antam one block per source
-instead of merging them away, and /analyze adds a "today by source" section —
-same size quoted by every live source, cheapest first, plus who pays the best
-buyback. Watches and /analyze verdicts stay per-gram (1g) for Antam.
+power the display: /price lists a watched Antam size as its own block with
+every source, cheapest first (the full board does the same for every size),
+and /analyze adds a "today by source" section — same size quoted by every
+live source, cheapest first, plus who pays the best buyback. Watches and
+/analyze verdicts stay per-gram (1g) for Antam.
 
 ### Logam Mulia — official, via Jina Reader
 

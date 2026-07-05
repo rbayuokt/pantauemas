@@ -10,7 +10,7 @@ most frequent thing anyone does.
 
 | Command | What it does |
 |---|---|
-| /price | Current prices for the sizes you watch (or sensible defaults), plus a button that expands to the full board: every size of every source, one block per source, so Antam's price differences between Logam Mulia, IndoGold, Galeri 24 and Aneka Logam stay visible |
+| /price | Current prices for the sizes you watch (or sensible defaults). Sizes quoted by several sources (Antam) get their own block right in the compact view — every source, cheapest first — and a button expands to the full board: every size of every source, one block per source |
 | /analyze | Pick a brand and size, get a statistical buy-timing read: 90-day range, percentile, trend, and a transparent 4-signal checklist with a verdict |
 | /watch | Wizard: pick a brand and size, type a target price |
 | /targets | List your targets with status, tap one to remove it |

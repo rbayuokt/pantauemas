@@ -244,19 +244,46 @@ export function analyzeMessage(
   return blocks.join('\n\n')
 }
 
+/**
+ * The compact view. A combo quoted by 2+ live sources (Antam) gets its own
+ * block listing every source, cheapest first; single-source combos stay one
+ * line with the usual source footer.
+ */
 export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: Brand; gramasi: number }>): string {
-  const lines = [t(lang, 'price_title', { date: wibDateLabel(lang, market.fetchedAt) })]
-  const sources: PriceSource[] = []
+  const singles: string[] = []
+  const blocks: string[] = []
+  const footerSources: PriceSource[] = []
   for (const combo of combos) {
     const bp = market.brands.find((b) => b.brand === combo.brand)
     const s = bp?.sizes.find((x) => x.gramasi === combo.gramasi)
     if (!bp || !s) continue
-    for (const src of brandSources(bp)) if (!sources.includes(src)) sources.push(src)
-    lines.push(t(lang, 'price_line', { size: comboLabel(combo.brand, combo.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
+    const quotes = (market.sourceQuotes ?? [])
+      .filter((q) => q.brand === combo.brand)
+      .flatMap((q) => {
+        const x = q.sizes.find((z) => z.gramasi === combo.gramasi)
+        return x ? [{ source: q.source, price: x.price, buybackPrice: x.buybackPrice }] : []
+      })
+    if (quotes.length >= 2) {
+      const sorted = [...quotes].sort((a, b) => a.price - b.price)
+      const block = [t(lang, 'price_combo_sources', { size: comboLabel(combo.brand, combo.gramasi) })]
+      for (const q of sorted) {
+        const line =
+          q.buybackPrice > 0
+            ? t(lang, 'price_src_line', { source: sourceName(q.source), price: rupiah(q.price), buyback: rupiah(q.buybackPrice) })
+            : t(lang, 'price_src_line_nobb', { source: sourceName(q.source), price: rupiah(q.price) })
+        block.push(q === sorted[0] ? `${line} ${t(lang, 'price_cheapest_tag')}` : line)
+      }
+      blocks.push(block.join('\n'))
+    } else {
+      for (const src of brandSources(bp)) if (!footerSources.includes(src)) footerSources.push(src)
+      singles.push(t(lang, 'price_line', { size: comboLabel(combo.brand, combo.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
+    }
   }
-  lines.push('', sourceLine(lang, sources))
-  lines.push('', t(lang, 'price_hint'))
-  return lines.join('\n')
+  const title = t(lang, 'price_title', { date: wibDateLabel(lang, market.fetchedAt) })
+  const parts = [singles.length ? `${title}\n${singles.join('\n')}` : title, ...blocks]
+  if (footerSources.length) parts.push(sourceLine(lang, footerSources))
+  parts.push(t(lang, 'price_hint'))
+  return parts.join('\n\n')
 }
 
 /**

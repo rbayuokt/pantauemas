@@ -197,6 +197,22 @@ const MESSAGES = {
     en: '• <b>{size}</b>: {price}',
     id: '• <b>{size}</b>: {price}',
   },
+  price_combo_sources: {
+    en: '<b>{size}</b> · by source',
+    id: '<b>{size}</b> · per sumber',
+  },
+  price_src_line: {
+    en: '• {source}: {price} · buyback {buyback}',
+    id: '• {source}: {price} · buyback {buyback}',
+  },
+  price_src_line_nobb: {
+    en: '• {source}: {price}',
+    id: '• {source}: {price}',
+  },
+  price_cheapest_tag: {
+    en: '← cheapest',
+    id: '← termurah',
+  },
   price_all_title: {
     en: '<b>All gold prices today</b> ({date})',
     id: '<b>Semua harga emas hari ini</b> ({date})',
