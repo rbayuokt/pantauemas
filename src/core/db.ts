@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS prices (
   price INTEGER NOT NULL,
   buyback INTEGER NOT NULL,
   source TEXT NOT NULL,
+  buyback_source TEXT,
   created_at TEXT NOT NULL,
   PRIMARY KEY (date, brand, gramasi)
 );
@@ -131,6 +132,10 @@ function migrate(db: DatabaseSync): void {
       ALTER TABLE backfill_new RENAME TO backfill;
     `)
   }
+  // Multi-source Antam: buyback can come from a different source than the
+  // sell price. After the brand rebuild so old databases upgrade in one go.
+  if (!columns(db, 'prices').includes('buyback_source')) db.exec('ALTER TABLE prices ADD COLUMN buyback_source TEXT')
+
   if (!columns(db, 'dip_state').includes('brand')) {
     db.exec(`
       CREATE TABLE dip_state_new (

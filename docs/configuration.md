@@ -42,6 +42,19 @@ call past 80 attempts per month, even across restarts and failures. User
 commands only read stored snapshots, so chat activity can never spend quota.
 Without a key, /analyze simply omits the world context lines.
 
+### Jina Reader (optional)
+
+| Var | Default | |
+|---|---|---|
+| `JINA_API_KEY` | - | Bearer key for r.jina.ai, the rendering proxy that fetches the official LM Antam prices from the Akamai-guarded logammulia.com. |
+
+The proxy works without a key at the bot's volume (a few calls a day); a free
+key from [jina.ai](https://jina.ai) raises the rate limit and makes the calls
+count against your own quota instead of the shared anonymous pool. The fetch
+sends `X-Retain-Images: none` so image rendering never burns quota. If the
+proxy fails, the Antam chain falls back to shop prices (IndoGold → Galeri 24 →
+Aneka Logam) on its own.
+
 ### ntfy (optional, self-host only)
 
 Users enable ntfy themselves with /ntfy; the bot generates a personal random

@@ -29,9 +29,10 @@ Telegram picks the right one based on the user's app language.
 
 Up to four steps, hard to get wrong:
 
-1. **Brand picker**: EMASKU or Antam. EMASKU comes in every bar size; Antam is
-   quoted per gram (current production year), so picking Antam skips the size
-   step entirely.
+1. **Brand picker**: EMASKU or Antam. EMASKU comes in every bar size; Antam
+   watches track the 1g bar (the per-gram reference every source quotes), so
+   picking Antam skips the size step entirely. The full /price board still
+   lists every Antam denomination the sources return.
 2. **Size picker** (EMASKU only): inline keyboard, 0.1g to 100g.
 3. **Target prompt**: shows the current price and buyback for the chosen gold
    as context, then asks for a number. Accepts `2450000`, `2.450.000`,

@@ -3,7 +3,7 @@ export type Lang = 'en' | 'id'
 /** Gold brands the bot tracks. EMASKU has many bar sizes; Antam is tracked per gram. */
 export type Brand = 'emasku' | 'antam'
 
-export type PriceSource = 'hrta' | 'emaskita' | 'anekalogam'
+export type PriceSource = 'hrta' | 'emaskita' | 'anekalogam' | 'logammulia' | 'indogold' | 'galeri24'
 
 export interface SizePrice {
   gramasi: number
@@ -14,6 +14,8 @@ export interface SizePrice {
 export interface BrandPrices {
   brand: Brand
   source: PriceSource
+  /** Where the buyback figures came from, when not the same as `source`. */
+  buybackSource?: PriceSource
   /** Price timestamp from the source (ISO). Falls back to fetch time when the source has none. */
   createdAt: string
   sizes: SizePrice[]

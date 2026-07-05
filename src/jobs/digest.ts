@@ -1,6 +1,6 @@
 import type { Config } from '../config.js'
 import type { TelegramApi } from '../bot/api.js'
-import { digestMessage, type DigestSection } from '../bot/copy.js'
+import { brandSources, digestMessage, type DigestSection } from '../bot/copy.js'
 import { buildReport, computeDriver } from '../core/analysis.js'
 import { refreshSpot } from '../core/spot.js'
 import type { Db } from '../core/db.js'
@@ -48,7 +48,7 @@ export async function runDigest(db: Db, api: TelegramApi, config: Config): Promi
         .map((w) => w.target)
       sections.push({
         brand: combo.brand,
-        source: brandPrices(market, combo.brand)!.source,
+        sources: brandSources(brandPrices(market, combo.brand)!),
         size,
         yesterdayPrice: yesterday?.price ?? null,
         report: buildReport(daily, size, driver),

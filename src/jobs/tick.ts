@@ -8,7 +8,7 @@ import {
 import { evaluateRung } from '../core/targets.js'
 import { brandPrices, fetchMarket, priceOf } from '../sources/market.js'
 import type { TelegramApi } from '../bot/api.js'
-import { comboLabel, dipMessage, targetHitMessage } from '../bot/copy.js'
+import { brandSources, comboLabel, dipMessage, targetHitMessage } from '../bot/copy.js'
 import { sendNtfy } from '../notify/ntfy.js'
 import type { Lang, WatchRow } from '../types.js'
 import { log, rupiah, wibDate } from '../util.js'
@@ -79,8 +79,8 @@ export async function runTick(db: Db, api: TelegramApi, config: Config): Promise
       if (hitTargets.length) {
         hits += hitTargets.length
         const stillArmed = rungs.filter((r) => !hitTargets.includes(r.target) && r.firedAt === null).map((r) => r.target)
-        const source = brandPrices(market, brand)!.source
-        await deliver(api, config, chatId, targetHitMessage(lang, brand, size, hitTargets, stillArmed, source), chatWatches[0]!.ntfyTopic, 'urgent')
+        const sources = brandSources(brandPrices(market, brand)!)
+        await deliver(api, config, chatId, targetHitMessage(lang, brand, size, hitTargets, stillArmed, sources), chatWatches[0]!.ntfyTopic, 'urgent')
         if (!alertedCombos.has(chatId)) alertedCombos.set(chatId, new Set())
         alertedCombos.get(chatId)!.add(comboKey)
       }
@@ -99,7 +99,7 @@ export async function runTick(db: Db, api: TelegramApi, config: Config): Promise
     )
     setDipState(db, result.next, combo.brand, combo.gramasi)
     if (!result.event) continue
-    const source = brandPrices(market, combo.brand)!.source
+    const sources = brandSources(brandPrices(market, combo.brand)!)
     const watchers = new Map(
       watches
         .filter((w) => w.brand === combo.brand && w.gramasi === combo.gramasi)
@@ -107,7 +107,7 @@ export async function runTick(db: Db, api: TelegramApi, config: Config): Promise
     )
     for (const [chatId, who] of watchers) {
       if (alertedCombos.get(chatId)?.has(`${combo.brand}:${combo.gramasi}`)) continue
-      await deliver(api, config, chatId, dipMessage(who.lang, combo.brand, size, result.event, config.dipLookbackDays, source), who.ntfyTopic, 'default')
+      await deliver(api, config, chatId, dipMessage(who.lang, combo.brand, size, result.event, config.dipLookbackDays, sources), who.ntfyTopic, 'default')
     }
   }
 

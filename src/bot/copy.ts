@@ -1,4 +1,4 @@
-import type { AnalysisReport, Brand, DipEvent, Lang, Market, PriceSource, SizePrice, TimingReport, TimingSignal, WatchRow } from '../types.js'
+import type { AnalysisReport, Brand, BrandPrices, DipEvent, Lang, Market, PriceSource, SizePrice, TimingReport, TimingSignal, WatchRow } from '../types.js'
 import { gram, pct, rupiah, wibDateLabel } from '../util.js'
 import type { InlineButton } from './api.js'
 import { t, type MessageKey } from './i18n.js'
@@ -12,7 +12,15 @@ export const BRAND_LABEL: Record<Brand, string> = {
 export function sourceName(source: PriceSource): string {
   if (source === 'hrta') return 'HRTA Gold'
   if (source === 'anekalogam') return 'Aneka Logam'
+  if (source === 'logammulia') return 'Logam Mulia (resmi)'
+  if (source === 'indogold') return 'IndoGold'
+  if (source === 'galeri24') return 'Galeri 24'
   return 'EmasKITA'
+}
+
+/** Every source behind a quote: the sell-price source plus, when it differs, the buyback one. */
+export function brandSources(bp: Pick<BrandPrices, 'source' | 'buybackSource'>): PriceSource[] {
+  return bp.buybackSource && bp.buybackSource !== bp.source ? [bp.source, bp.buybackSource] : [bp.source]
 }
 
 function sourceLine(lang: Lang, sources: PriceSource[]): string {
@@ -31,7 +39,7 @@ export function targetHitMessage(
   size: SizePrice,
   hitTargets: number[],
   remainingArmed: number[],
-  source: PriceSource,
+  sources: PriceSource[],
 ): string {
   const lines = [t(lang, 'alert_hit_title')]
   for (const target of hitTargets) {
@@ -41,7 +49,7 @@ export function targetHitMessage(
   lines.push(t(lang, 'alert_hit_footer', { buyback: rupiah(size.buybackPrice), spread: pct(spread, lang) }))
   const below = remainingArmed.filter((r) => r < Math.min(...hitTargets))
   if (below.length) lines.push(t(lang, 'alert_next_rung', { target: rupiah(Math.max(...below)) }))
-  lines.push('', sourceLine(lang, [source]))
+  lines.push('', sourceLine(lang, sources))
   return lines.join('\n')
 }
 
@@ -51,7 +59,7 @@ export function dipMessage(
   size: SizePrice,
   event: DipEvent,
   lookbackDays: number,
-  source: PriceSource,
+  sources: PriceSource[],
 ): string {
   const body = t(lang, 'alert_dip', {
     size: comboLabel(brand, size.gramasi),
@@ -60,7 +68,7 @@ export function dipMessage(
     days: lookbackDays,
     high: rupiah(event.refHigh),
   })
-  return `${body}\n\n${sourceLine(lang, [source])}`
+  return `${body}\n\n${sourceLine(lang, sources)}`
 }
 
 function changeLabel(lang: Lang, current: number, previous: number | null): string | null {
@@ -72,7 +80,7 @@ function changeLabel(lang: Lang, current: number, previous: number | null): stri
 
 export interface DigestSection {
   brand: Brand
-  source: PriceSource
+  sources: PriceSource[]
   size: SizePrice
   yesterdayPrice: number | null
   report: AnalysisReport
@@ -111,7 +119,7 @@ export function digestMessage(lang: Lang, sections: DigestSection[]): string {
     }
     blocks.push(lines.join('\n'))
   }
-  blocks.push(sourceLine(lang, sections.map((s) => s.source)))
+  blocks.push(sourceLine(lang, sections.flatMap((s) => s.sources)))
   return blocks.join('\n\n')
 }
 
@@ -140,7 +148,7 @@ function rangeGauge(posPct: number): string {
 export function analyzeMessage(
   lang: Lang,
   brand: Brand,
-  source: PriceSource,
+  sources: PriceSource[],
   size: SizePrice,
   timing: TimingReport,
   spot?: { goldUsd: number; usdidr: number } | null,
@@ -200,7 +208,7 @@ export function analyzeMessage(
     blocks.push(checklist.join('\n'))
   }
 
-  blocks.push(`${sourceLine(lang, [source])}\n${t(lang, 'analyze_footnote')}`)
+  blocks.push(`${sourceLine(lang, sources)}\n${t(lang, 'analyze_footnote')}`)
   return blocks.join('\n\n')
 }
 
@@ -211,7 +219,7 @@ export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: 
     const bp = market.brands.find((b) => b.brand === combo.brand)
     const s = bp?.sizes.find((x) => x.gramasi === combo.gramasi)
     if (!bp || !s) continue
-    if (!sources.includes(bp.source)) sources.push(bp.source)
+    for (const src of brandSources(bp)) if (!sources.includes(src)) sources.push(src)
     lines.push(t(lang, 'price_line', { size: comboLabel(combo.brand, combo.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
   }
   lines.push('', sourceLine(lang, sources))
@@ -223,7 +231,7 @@ export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: 
 export function allPricesMessage(lang: Lang, market: Market): string {
   const blocks = [t(lang, 'price_all_title', { date: wibDateLabel(lang, market.fetchedAt) })]
   for (const bp of market.brands) {
-    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${sourceName(bp.source)}`]
+    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${[...new Set(brandSources(bp).map(sourceName))].join(', ')}`]
     for (const s of [...bp.sizes].sort((a, b) => a.gramasi - b.gramasi)) {
       lines.push(t(lang, 'price_line', { size: gram(s.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
     }

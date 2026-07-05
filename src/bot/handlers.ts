@@ -12,7 +12,7 @@ import type { Brand, Lang, Market } from '../types.js'
 import { gram, log, parsePriceInput, pct, rupiah } from '../util.js'
 import type { InlineButton, TelegramApi, TgUpdate } from './api.js'
 import { BOT_COMMANDS, t } from './i18n.js'
-import { allPricesMessage, analyzeMessage, BRAND_LABEL, comboLabel, priceMessage, targetsMessage } from './copy.js'
+import { allPricesMessage, analyzeMessage, BRAND_LABEL, brandSources, comboLabel, priceMessage, targetsMessage } from './copy.js'
 
 const DONATION_URL = 'https://saweria.co/rbayuokt'
 
@@ -319,7 +319,7 @@ export class BotHandlers {
     // scheduler; reading it here costs zero API calls no matter how often
     // users tap /analyze.
     const timing = buildTimingReport(daily, size, spotDriver(this.db))
-    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, bp.source, size, timing, latestSpot(this.db)), {
+    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, brandSources(bp), size, timing, latestSpot(this.db)), {
       keyboard: [[{ text: t(lang, 'analyze_btn_again'), callback_data: 'analyze:menu' }]],
     })
   }

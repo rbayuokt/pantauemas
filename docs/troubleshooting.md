@@ -45,6 +45,24 @@ curl -s -A "Mozilla/5.0" https://hrtagold.id/api/v1/brandings/price/daily | head
 - EmasKITA parser returning nothing → their HTML changed. The parser is ~30
   lines in `src/sources/emaskita.ts`; compare against the live page.
 
+## Antam sources failing
+
+Antam has its own chain (official Logam Mulia via the Jina proxy for sell
+prices, then IndoGold → Galeri 24 → Aneka Logam for buyback or as full
+fallback), so a single failure only shows up as a log line and a different
+source label under the price. Things worth knowing when the log gets noisy:
+
+- `Jina Reader returned HTTP 402/429` → the anonymous proxy quota ran out;
+  set `JINA_API_KEY` (free at jina.ai). Meanwhile prices come from the shops.
+- `IndoGold: pricelist rejected (Form session expired...)` → their
+  session-token dance changed; the fetch falls through to Galeri 24. Check
+  `src/sources/indogold.ts` against the live page's inline script.
+- `every Antam source is down` → Antam watches skip the round, EMASKU is
+  unaffected, and the next tick retries from the top of the chain.
+- A dip alert that looks wrong for Antam → check the `source` column in the
+  `prices` table for those dates; a chain flap between official and shop
+  prices (they differ by 2–4%) can exaggerate a move.
+
 ## Digest problems
 
 - **Nobody got one**: digests only go to users with /digest on AND at least

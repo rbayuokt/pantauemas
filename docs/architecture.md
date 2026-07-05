@@ -81,10 +81,13 @@ src/
     backfill.ts   ~1y synthetic history per bar size
 
   sources/
-    market.ts     all brands in one fetch: hrta (emaskita fallback) + anekalogam
+    market.ts     all brands in one fetch: hrta (emaskita fallback) + the Antam chain
     hrta.ts       EMASKU primary source (JSON API, all sizes in one call)
     emaskita.ts   EMASKU fallback source (HTML table parser)
-    anekalogam.ts Antam per-gram quote (HTML parser)
+    logammulia.ts Antam official sell prices, fetched via the Jina Reader proxy
+    indogold.ts   Antam shop quote #1: token-guarded AJAX pricelist, sell + buyback
+    galeri24.ts   Antam shop quote #2: server-rendered HTML, sell + buyback
+    anekalogam.ts Antam shop quote #3: per-gram HTML quote (the original source)
     yahoo.ts      world gold + USD/IDR daily closes
 
   notify/
@@ -99,11 +102,12 @@ functions over plain data, which keeps them unit-testable without mocks;
 
 ## Why one price check serves everyone
 
-The HRTA API returns every bar size in a single response. So a tick is: one
-HTTP call, store all sizes, then walk the watches table comparing numbers.
-User count changes the number of Telegram sends, not the number of price
-requests. The bot could serve hundreds of users on the same three requests a
-day it uses for one.
+Every source returns all its sizes in a single response (the HRTA API as
+JSON, the Antam sources as one page or one pricelist call each). So a tick
+is: a handful of HTTP calls, store all sizes, then walk the watches table
+comparing numbers. User count changes the number of Telegram sends, not the
+number of price requests. The bot could serve hundreds of users on the same
+few requests a day it uses for one.
 
 ## Storage
 

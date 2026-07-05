@@ -127,11 +127,13 @@ export function rearmWatch(db: Db, id: number): void {
 
 export function storeMarket(db: Db, market: Market): void {
   const stmt = db.prepare(
-    'INSERT OR REPLACE INTO prices (date, brand, gramasi, price, buyback, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO prices (date, brand, gramasi, price, buyback, source, buyback_source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
   )
   for (const bp of market.brands) {
     const date = wibDate(bp.createdAt)
-    for (const s of bp.sizes) stmt.run(date, bp.brand, s.gramasi, s.price, s.buybackPrice, bp.source, bp.createdAt)
+    for (const s of bp.sizes) {
+      stmt.run(date, bp.brand, s.gramasi, s.price, s.buybackPrice, bp.source, bp.buybackSource ?? null, bp.createdAt)
+    }
   }
 }
 

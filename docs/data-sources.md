@@ -1,8 +1,8 @@
 # Data sources
 
 All sources are free and unauthenticated. That's the deal: zero cost, but none
-of them owe us stability, which is why there's a fallback chain and per-row
-source tracking in the CSV.
+of them owe us stability, which is why each brand has a fallback chain and
+every stored price row records the source it came from.
 
 ## HRTA Gold API (primary)
 
@@ -63,28 +63,94 @@ other, and the CSV records which source each row came from.
 If both sources fail, the tick logs the error and gives up until the next
 scheduled slot; the bot itself keeps running.
 
-## Aneka Logam (Antam prices)
+## Antam prices (four sources)
+
+Antam retail prices differ visibly between shops (on one 2026 day the 1g bar
+was Rp 2.670.000 official, Rp 2.738.000 at IndoGold, Rp 2.777.000 at
+Galeri 24), so the bot reads up to four sources and labels every number with
+where it came from.
+
+The strategy, implemented in `sources/market.ts`:
+
+1. **Logam Mulia (official)** provides the sell prices whenever it responds.
+2. The first shop source that responds — **IndoGold → Galeri 24 → Aneka
+   Logam** — fills in the buyback figures, since the official table publishes
+   none. The `prices` table records both (`source`, `buyback_source`), and
+   messages credit both ("Sumber: Logam Mulia (resmi), IndoGold").
+3. When the official fetch fails, the winning shop quote is used wholesale.
+   When every shop fails, Antam is skipped for that round (the message layer
+   needs a buyback figure); EMASKU watches are unaffected.
+
+Watches and /analyze stay per-gram (1g) for Antam, but the full /price board
+now lists every denomination both the official table and the buyback source
+know (0.5–100g).
+
+### Logam Mulia — official, via Jina Reader
+
+```
+GET https://r.jina.ai/https://www.logammulia.com/id/harga-emas-hari-ini
+```
+
+logammulia.com is PT Antam's own shop and the authoritative daily price
+(updated ~08:30 WIB), but it sits behind Akamai, which rejects anything that
+isn't a real browser at the TLS-fingerprint level — plain fetches get 403 no
+matter the headers. Jina Reader (r.jina.ai) is a free rendering proxy that
+returns the page as markdown; the parser (`sources/logammulia.ts`) reads the
+plain "Emas Batangan" table (harga dasar column, every denomination from 0.5g
+to 1kg) and stops before the themed sections (Gift Series, Imlek, Batik) that
+repeat weights at premium prices. Buyback is behind a login, hence the shop
+merge above.
+
+The keyless Jina tier easily covers the bot's few calls a day; an optional
+`JINA_API_KEY` raises the rate limit. This is the one source reached through
+a third-party proxy, so it's deliberately the one the chain can live without.
+
+### IndoGold — first buyback source
+
+```
+GET  https://www.indogold.id/harga-emas-hari-ini      (session cookie + token)
+POST https://www.indogold.id/home/get_data_pricelist  (form={"product":"LM_1"})
+```
+
+IndoGold is a licensed online gold dealer. Its price table loads via an AJAX
+endpoint guarded by a per-session `simulasi-token` embedded in the page's
+inline script, so `sources/indogold.ts` does a two-step fetch: GET the page to
+collect the cookie and token, then POST the pricelist form. The JSON answer
+covers every retail size (0.5–100g), sell and buyback, for three production
+years; the parser keeps the newest year. Two requests per tick with a browser
+User-Agent and Referer look exactly like a normal page view.
+
+### Galeri 24 — second buyback source
+
+```
+GET https://galeri24.co.id/harga-emas
+```
+
+Galeri 24 is Pegadaian's gold retailer. The page is server-rendered: one block
+per vendor anchored as `<div id="ANTAM">`, rows of weight / Harga Jual / Harga
+Buyback for 0.5–100g. `sources/galeri24.ts` cuts out the ANTAM block (ignoring
+ANTAM MULIA RETRO and the UBS blocks) and scans the flattened text.
+
+### Aneka Logam — last resort
 
 ```
 GET https://www.anekalogam.co.id/id
 ```
 
 Aneka Logam is a Jakarta gold dealer whose homepage server-renders LM Antam
-prices per gram for the current production year: a `buy-sell-rate` block with
-Harga Jual and Harga Beli in `tprice` spans, plus a note naming the year
-("Harga berlaku untuk LM Antam produksi tahun 2026"). The parser
-(`sources/anekalogam.ts`) reads those two numbers and sanity-checks them
-(buyback must sit below sell, price must be plausible per gram).
+prices for the current production year, but only per gram: a `buy-sell-rate`
+block with Harga Jual and Harga Beli in `tprice` spans, plus a note naming the
+year ("Harga berlaku untuk LM Antam produksi tahun 2026"). It was the bot's
+original (and sole) Antam source; it now sits last in the shop chain because
+a 1g-only quote shrinks the merged size list to a single row.
 
-Because the quote is per gram, Antam maps to a single 1g series in the bot;
-Antam targets are per-gram targets. The page also describes older production
-variants (pre-2025 with/without the mind.id logo, 2018 packaging), but their
-buyback prices load via JavaScript and are not scrapable with a plain fetch.
-If they ever expose those as server-rendered HTML or a public endpoint,
-year-variant tracking becomes a small addition.
-
-If Aneka Logam is down, the tick simply proceeds without Antam prices; EMASKU
-watches are unaffected, and Antam watches skip that round.
+One honest caveat: when the official source flaps (say, the proxy times out
+one tick and recovers the next), the Antam series briefly reflects a shop's
+price level, which runs 2–4% above official. The dip detector's threshold is
+2%, so a flap can in principle read as a dip. In practice sources publish once
+a day and the prices table keeps one row per day (last tick wins), so the
+window is small — but if a dip alert ever looks odd, check the `source` column
+for that date first.
 
 ## Yahoo Finance (context and backfill)
 
@@ -124,7 +190,7 @@ configured means this source is simply skipped.
 
 | Source | Why not |
 |---|---|
-| logammulia.com (Antam) | Blocks non-browser clients with 403 |
+| logammulia.com, fetched directly | Akamai blocks non-browser TLS fingerprints with 403 (full browser headers, HTTP/2 and Googlebot UA all bounce); used via Jina Reader instead |
 | pegadaian.co.id | Prices load via client-side JS, would need a headless browser |
-| harga-emas.org | Scrapable, but aggregates the same data we get first-hand |
+| harga-emas.org | Now a Pluang-owned Next.js app; the Antam table renders client-side and its data endpoint isn't discoverable from the static chunks |
 | goldapi.io / metals.dev | Free tiers are ~100 requests/month, too tight, and spot-only |

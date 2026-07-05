@@ -20,7 +20,9 @@ What it does:
   pick a brand and size, type a price). A target fires once with an urgent
   push, then re-arms after the price recovers, so it never spams.
 - **Two brands**: EMASKU (every bar size, via HRTA Gold's API) and LM Antam
-  (per gram, current production, via Aneka Logam). Watch either or both.
+  (official logammulia.com sell prices, with buyback and fallback from
+  IndoGold, Galeri 24, and Aneka Logam — four sources, every alert labeled
+  with the ones it used). Watch either or both.
 - **Dip detection**: a 2%+ drop below the 14-day high gets flagged to everyone
   watching that brand and size, even when it lands between their targets.
   Targets are guesses; this catches what they miss.
@@ -65,9 +67,9 @@ More detail in [`docs/`](docs/):
 | Extra pushes | Per-user [ntfy](https://ntfy.sh) topics via /ntfy |
 | Storage | SQLite at `data/pantauemas.db` (users, watches, prices, backfill) |
 | Scheduler | Built-in WIB clock loop inside the bot process |
-| Market data | HRTA Gold API, EmasKITA HTML (fallback), Aneka Logam (Antam), Yahoo Finance (gold + USD/IDR), metalpriceapi.com (optional daily spot snapshot, quota-capped) |
+| Market data | HRTA Gold API, EmasKITA HTML (fallback), Logam Mulia official via Jina Reader + IndoGold + Galeri 24 + Aneka Logam (Antam chain), Yahoo Finance (gold + USD/IDR), metalpriceapi.com (optional daily spot snapshot, quota-capped) |
 | Container | Docker + docker compose, `node:22-alpine` |
-| Tests | Node's built-in test runner (37 tests, in-memory SQLite) |
+| Tests | Node's built-in test runner (44 tests, in-memory SQLite) |
 
 ## Setup and run
 
