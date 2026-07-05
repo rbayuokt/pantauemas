@@ -1,7 +1,7 @@
-import type { AnalysisReport, Brand, DipEvent, Lang, Market, PriceSource, SizePrice, WatchRow } from '../types.js'
+import type { AnalysisReport, Brand, DipEvent, Lang, Market, PriceSource, SizePrice, TimingReport, TimingSignal, WatchRow } from '../types.js'
 import { gram, pct, rupiah, wibDateLabel } from '../util.js'
 import type { InlineButton } from './api.js'
-import { t } from './i18n.js'
+import { t, type MessageKey } from './i18n.js'
 
 export const BRAND_LABEL: Record<Brand, string> = {
   emasku: 'EMASKU',
@@ -122,6 +122,41 @@ function driverLine(lang: Lang, goldChangePct: number, fxChangePct: number): str
   if (Math.abs(goldChangePct) >= Math.abs(fxChangePct) * 1.5) return t(lang, 'digest_driver_gold', params)
   if (Math.abs(fxChangePct) >= Math.abs(goldChangePct) * 1.5) return t(lang, 'digest_driver_fx', params)
   return t(lang, 'digest_driver_mix', params)
+}
+
+const SIGNAL_KEY: Record<TimingSignal['key'], MessageKey> = {
+  percentile: 'analyze_sig_percentile',
+  range: 'analyze_sig_range',
+  momentum: 'analyze_sig_momentum',
+  dip: 'analyze_sig_dip',
+}
+
+export function analyzeMessage(lang: Lang, brand: Brand, source: PriceSource, size: SizePrice, timing: TimingReport): string {
+  const r = timing.report
+  const lines = [t(lang, 'analyze_title', { size: comboLabel(brand, size.gramasi), date: wibDateLabel(lang) })]
+  lines.push(t(lang, 'analyze_price_line', { price: rupiah(size.price), buyback: rupiah(size.buybackPrice), spread: pct(r.spreadPct, lang) }))
+  if (timing.low90 !== null && timing.high90 !== null) {
+    lines.push(t(lang, 'analyze_range_line', { low: rupiah(timing.low90), high: rupiah(timing.high90) }))
+  }
+  if (r.cheaperThanPct !== null) lines.push(t(lang, 'digest_cheaper', { pct: pct(r.cheaperThanPct, lang, 0), days: r.sampleDays }))
+  if (r.trend) lines.push(t(lang, `digest_trend_${r.trend}` as const))
+  if (timing.dropFromHigh14Pct !== null && timing.dropFromHigh14Pct >= 0.05) {
+    lines.push(t(lang, 'analyze_off_high', { drop: pct(timing.dropFromHigh14Pct, lang) }))
+  }
+  const blocks = [lines.join('\n')]
+
+  if (timing.timing !== null) {
+    const checklist = [t(lang, 'analyze_signals_title', { score: timing.score, max: timing.maxScore })]
+    for (const s of timing.signals) checklist.push(`${s.pass ? '✅' : '⬜'} ${t(lang, SIGNAL_KEY[s.key])}`)
+    blocks.push(checklist.join('\n'))
+  }
+  if (timing.timing === 'good') blocks.push(t(lang, 'analyze_verdict_good'))
+  else if (timing.timing === 'ok') blocks.push(t(lang, 'analyze_verdict_ok'))
+  else if (timing.timing === 'wait') blocks.push(t(lang, 'analyze_verdict_wait'))
+  else blocks.push(t(lang, 'analyze_no_history'))
+
+  blocks.push(`${sourceLine(lang, [source])}\n${t(lang, 'analyze_footnote')}`)
+  return blocks.join('\n\n')
 }
 
 export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: Brand; gramasi: number }>): string {

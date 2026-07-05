@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildReport, computeDriver } from '../src/core/analysis.js'
+import { buildReport, buildTimingReport, computeDriver } from '../src/core/analysis.js'
 import { parseAnekalogamHtml } from '../src/sources/anekalogam.js'
 import { parseEmaskitaHtml } from '../src/sources/emaskita.js'
 import type { DayPrice, SizePrice } from '../src/types.js'
@@ -37,6 +37,29 @@ test('short history gives no percentile or verdict', () => {
   const report = buildReport(rampSeries(10, 2400000, 2450000), sizeAt(2420000))
   assert.equal(report.cheaperThanPct, null)
   assert.equal(report.verdict, null)
+})
+
+test('timing report calls the bottom of a falling series a good buy', () => {
+  const timing = buildTimingReport(rampSeries(90, 2600000, 2400000), sizeAt(2400000))
+  assert.equal(timing.low90, 2400000)
+  assert.equal(timing.high90, 2600000)
+  assert.equal(timing.maxScore, 4)
+  assert.equal(timing.score, 4)
+  assert.equal(timing.timing, 'good')
+})
+
+test('timing report says wait at the top of a rising series', () => {
+  const timing = buildTimingReport(rampSeries(90, 2400000, 2600000), sizeAt(2600000))
+  assert.ok(timing.rangePosPct !== null && timing.rangePosPct > 99)
+  assert.equal(timing.score, 0)
+  assert.equal(timing.timing, 'wait')
+})
+
+test('timing report gives no verdict on short history', () => {
+  const timing = buildTimingReport(rampSeries(6, 2400000, 2450000), sizeAt(2420000))
+  assert.ok(timing.maxScore < 3)
+  assert.equal(timing.timing, null)
+  assert.equal(timing.low90, null)
 })
 
 test('driver returns raw changes for the copy layer to render', () => {

@@ -27,8 +27,8 @@ const MESSAGES = {
     id: 'Halo lagi 👋 /watch buat nambah target, /targets buat lihat pantauanmu.',
   },
   help: {
-    en: '💰 /price - today\'s gold price\n🎯 /watch - set a price target\n📋 /targets - see or remove targets\n☀️ /digest - morning summary on/off\n📳 /ntfy - urgent alerts via the ntfy app\n🌐 /language - switch language\n❌ /cancel - back out of anything\n\nGood to know:\n• Repeat /watch to add more targets. Any mix works: EMASKU or Antam, three prices on 1g, one on 5g, up to 15 total\n• A target fires once, then re-arms after the price recovers. No spam\n• I check prices a few times a day; new prices usually land around 11am WIB\n• Telegram alerts respect silent mode. Want ones that don\'t? /ntfy gives you a personal channel in the free ntfy app, with step-by-step setup\n\nThis bot is free. If it earns its keep, /donate helps cover the server 💛',
-    id: '💰 /price - harga emas hari ini\n🎯 /watch - pasang target harga\n📋 /targets - lihat atau hapus target\n☀️ /digest - ringkasan pagi on/off\n📳 /ntfy - alert urgent lewat aplikasi ntfy\n🌐 /language - ganti bahasa\n❌ /cancel - batalin apapun\n\nBiar nggak bingung:\n• /watch bisa diulang buat nambah target. Bebas campur: EMASKU atau Antam, tiga harga di 1g, satu di 5g, maksimal 15\n• Target cuma bunyi sekali, terus aktif lagi setelah harganya pulih. Nggak bakal spam\n• Aku cek harga beberapa kali sehari; harga baru biasanya keluar sekitar jam 11 WIB\n• Alert Telegram ikut mode senyap. Mau yang nembus? /ntfy kasih kamu channel pribadi di aplikasi gratis ntfy, lengkap sama panduannya\n\nBot ini gratis. Kalau kerasa kepake, /donate bantu biaya servernya 💛',
+    en: '💰 /price - today\'s gold price\n📊 /analyze - is now a good time to buy?\n🎯 /watch - set a price target\n📋 /targets - see or remove targets\n☀️ /digest - morning summary on/off\n📳 /ntfy - urgent alerts via the ntfy app\n🌐 /language - switch language\n❌ /cancel - back out of anything\n\nGood to know:\n• Repeat /watch to add more targets. Any mix works: EMASKU or Antam, three prices on 1g, one on 5g, up to 15 total\n• A target fires once, then re-arms after the price recovers. No spam\n• I check prices a few times a day; new prices usually land around 11am WIB\n• Telegram alerts respect silent mode. Want ones that don\'t? /ntfy gives you a personal channel in the free ntfy app, with step-by-step setup\n\nThis bot is free. If it earns its keep, /donate helps cover the server 💛',
+    id: '💰 /price - harga emas hari ini\n📊 /analyze - sekarang waktu pas buat beli?\n🎯 /watch - pasang target harga\n📋 /targets - lihat atau hapus target\n☀️ /digest - ringkasan pagi on/off\n📳 /ntfy - alert urgent lewat aplikasi ntfy\n🌐 /language - ganti bahasa\n❌ /cancel - batalin apapun\n\nBiar nggak bingung:\n• /watch bisa diulang buat nambah target. Bebas campur: EMASKU atau Antam, tiga harga di 1g, satu di 5g, maksimal 15\n• Target cuma bunyi sekali, terus aktif lagi setelah harganya pulih. Nggak bakal spam\n• Aku cek harga beberapa kali sehari; harga baru biasanya keluar sekitar jam 11 WIB\n• Alert Telegram ikut mode senyap. Mau yang nembus? /ntfy kasih kamu channel pribadi di aplikasi gratis ntfy, lengkap sama panduannya\n\nBot ini gratis. Kalau kerasa kepake, /donate bantu biaya servernya 💛',
   },
   watch_pick_brand: {
     en: 'Which gold do you want to watch? 👇\n\nEMASKU has every bar size from 0.1g up. Antam is tracked per gram, current production year.',
@@ -229,6 +229,74 @@ const MESSAGES = {
     en: 'Fresh topic made. The old one is dead, subscribe to this one instead 👇',
     id: 'Topic baru udah jadi. Yang lama mati, subscribe yang ini ya 👇',
   },
+  analyze_pick_brand: {
+    en: 'Which gold should I analyze? 👇\n\nI\'ll check today\'s price against the recorded history and tell you how it stacks up. Numbers only, no crystal ball.',
+    id: 'Emas mana yang mau dianalisis? 👇\n\nAku bandingin harga hari ini sama riwayat harga yang tercatat, terus kasih tahu posisinya. Murni angka, bukan ramalan.',
+  },
+  analyze_pick_size: {
+    en: 'Which bar size should I analyze? 👇',
+    id: 'Ukuran berapa yang mau dianalisis? 👇',
+  },
+  analyze_title: {
+    en: '📊 <b>{size} check</b> · {date}',
+    id: '📊 <b>Cek {size}</b> · {date}',
+  },
+  analyze_price_line: {
+    en: 'Price: {price} · buyback {buyback} (spread {spread})',
+    id: 'Harga: {price} · buyback {buyback} (spread {spread})',
+  },
+  analyze_range_line: {
+    en: '90-day range: {low} – {high}',
+    id: 'Rentang 90 hari: {low} – {high}',
+  },
+  analyze_off_high: {
+    en: 'Now {drop} below the 14-day high',
+    id: 'Sekarang {drop} di bawah tertinggi 14 hari',
+  },
+  analyze_signals_title: {
+    en: '<b>Buy signals: {score}/{max}</b>',
+    id: '<b>Sinyal beli: {score}/{max}</b>',
+  },
+  analyze_sig_percentile: {
+    en: 'Cheaper than most of the last 90 days',
+    id: 'Lebih murah dari mayoritas 90 hari terakhir',
+  },
+  analyze_sig_range: {
+    en: 'Near the bottom of the 90-day range',
+    id: 'Dekat titik terendah rentang 90 hari',
+  },
+  analyze_sig_momentum: {
+    en: 'At or below the 7-day average',
+    id: 'Di bawah atau pas rata-rata 7 hari',
+  },
+  analyze_sig_dip: {
+    en: 'Dipped 1%+ off the 14-day high',
+    id: 'Turun 1%+ dari tertinggi 14 hari',
+  },
+  analyze_verdict_good: {
+    en: '🟢 <b>Looks like a good day to buy.</b> Days this cheap haven\'t come often lately. Want an exact entry? /watch sets a target.',
+    id: '🟢 <b>Kelihatannya hari yang bagus buat beli.</b> Hari semurah ini belakangan jarang. Mau nunggu harga pasti? Pasang target lewat /watch.',
+  },
+  analyze_verdict_ok: {
+    en: '🟡 <b>Decent, not special.</b> Buying now is fine, waiting is fine too. A /watch target catches the better days for you.',
+    id: '🟡 <b>Lumayan, tapi biasa aja.</b> Beli sekarang oke, nunggu juga oke. Target /watch bisa nangkepin hari yang lebih murah.',
+  },
+  analyze_verdict_wait: {
+    en: '🔴 <b>Pricey by recent standards.</b> If you can wait, patience usually pays. Set a /watch target and let me do the waiting.',
+    id: '🔴 <b>Tergolong mahal dibanding hari-hari terakhir.</b> Kalau bisa nunggu, sabar biasanya lebih untung. Pasang target /watch, biar aku yang nungguin.',
+  },
+  analyze_no_history: {
+    en: 'I don\'t have enough price history for this size yet to judge the timing. Give me a few days of watching and ask again 🙏',
+    id: 'Riwayat harga ukuran ini belum cukup buat nilai timingnya. Kasih aku beberapa hari buat mantau, terus tanya lagi ya 🙏',
+  },
+  analyze_footnote: {
+    en: '<i>Pure statistics from recorded prices. Not a prediction, not financial advice.</i>',
+    id: '<i>Murni statistik dari harga yang tercatat. Bukan prediksi, bukan saran keuangan.</i>',
+  },
+  analyze_btn_again: {
+    en: '📊 Analyze another size',
+    id: '📊 Analisis ukuran lain',
+  },
   source_line: {
     en: 'Source: {source}',
     id: 'Sumber: {source}',
@@ -267,6 +335,7 @@ export function allMessages(): Record<string, Record<Lang, string>> {
 export const BOT_COMMANDS: Record<Lang, Array<{ command: string; description: string }>> = {
   en: [
     { command: 'price', description: "💰 Today's gold price" },
+    { command: 'analyze', description: '📊 Is now a good time to buy?' },
     { command: 'watch', description: '🎯 Set a price target' },
     { command: 'targets', description: '📋 See or remove your targets' },
     { command: 'digest', description: '☀️ Morning summary on/off' },
@@ -277,6 +346,7 @@ export const BOT_COMMANDS: Record<Lang, Array<{ command: string; description: st
   ],
   id: [
     { command: 'price', description: '💰 Harga emas hari ini' },
+    { command: 'analyze', description: '📊 Waktu pas buat beli?' },
     { command: 'watch', description: '🎯 Pasang target harga' },
     { command: 'targets', description: '📋 Lihat atau hapus target' },
     { command: 'digest', description: '☀️ Ringkasan pagi on/off' },

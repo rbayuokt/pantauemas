@@ -11,6 +11,7 @@ most frequent thing anyone does.
 | Command | What it does |
 |---|---|
 | /price | Current prices for the sizes you watch (or sensible defaults), plus a button that expands to every size of every brand with its source |
+| /analyze | Pick a brand and size, get a statistical buy-timing read: 90-day range, percentile, trend, and a transparent 4-signal checklist with a verdict |
 | /watch | Wizard: pick a brand and size, type a target price |
 | /targets | List your targets with status, tap one to remove it |
 | /digest | Toggle the morning summary on or off |
@@ -48,6 +49,26 @@ Guardrails, because typed prices attract typos:
 
 State for the wizard (waiting for a typed price) lives in memory. If the bot
 restarts mid-wizard, the user just taps /watch again; nothing breaks.
+
+## The /analyze view
+
+Same brand/size picker as /watch, but instead of setting a target it answers
+"is now a decent time to buy?" with statistics only, no prediction:
+
+- Context lines: current price and spread, the 90-day low/high, the
+  cheaper-than percentile, the 7d-vs-30d trend, and how far today sits below
+  the 14-day high.
+- A checklist of four yes/no signals, each shown with a ✅/⬜ so the verdict is
+  never a black box: cheaper than 60%+ of the last 90 days, in the bottom 35%
+  of the 90-day range, at or below the 7-day average, and dipped 1%+ off the
+  14-day high.
+- The score maps to a verdict: 3-4 green "good day to buy", 2 yellow
+  "decent, not special", 0-1 red "pricey, patience pays". Signals without
+  enough history are skipped, and fewer than three evaluable signals means no
+  verdict at all, just an honest "not enough history yet".
+
+Every message ends with the source and a "statistics, not financial advice"
+footnote.
 
 ## Alert behavior
 

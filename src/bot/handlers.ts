@@ -1,15 +1,16 @@
 import { randomBytes } from 'node:crypto'
 import type { Config } from '../config.js'
 import type { Db } from '../core/db.js'
+import { buildTimingReport } from '../core/analysis.js'
 import {
-  addWatch, deleteWatch, ensureUser, getUser, listWatches, MAX_WATCHES_PER_USER, setLang, setNtfyTopic, toggleDigest,
+  addWatch, deleteWatch, ensureUser, getUser, listWatches, MAX_WATCHES_PER_USER, mergedDaily, setLang, setNtfyTopic, toggleDigest,
 } from '../core/store.js'
-import { fetchMarket, priceOf } from '../sources/market.js'
+import { brandPrices, fetchMarket, priceOf } from '../sources/market.js'
 import type { Brand, Lang, Market } from '../types.js'
 import { gram, log, parsePriceInput, pct, rupiah } from '../util.js'
 import type { InlineButton, TelegramApi, TgUpdate } from './api.js'
 import { BOT_COMMANDS, t } from './i18n.js'
-import { allPricesMessage, BRAND_LABEL, comboLabel, priceMessage, targetsMessage } from './copy.js'
+import { allPricesMessage, analyzeMessage, BRAND_LABEL, comboLabel, priceMessage, targetsMessage } from './copy.js'
 
 const DONATION_URL = 'https://saweria.co/rbayuokt'
 
@@ -38,8 +39,16 @@ const BRAND_KEYBOARD: InlineButton[][] = [
   ],
 ]
 
-function sizeKeyboard(): InlineButton[][] {
-  const buttons = EMASKU_SIZES.map((g) => ({ text: gram(g), callback_data: `size:${g}` }))
+/** Same picker as /watch, but its callbacks run an analysis instead of the wizard. */
+const ANALYZE_BRAND_KEYBOARD: InlineButton[][] = [
+  [
+    { text: `🥇 ${BRAND_LABEL.emasku}`, callback_data: 'abrand:emasku' },
+    { text: `🏅 ${BRAND_LABEL.antam}`, callback_data: 'abrand:antam' },
+  ],
+]
+
+function sizeKeyboard(prefix: 'size' | 'asize' = 'size'): InlineButton[][] {
+  const buttons = EMASKU_SIZES.map((g) => ({ text: gram(g), callback_data: `${prefix}:${g}` }))
   return [buttons.slice(0, 5), buttons.slice(5)]
 }
 
@@ -157,6 +166,9 @@ export class BotHandlers {
         })
         return
       }
+      case '/analyze':
+        await this.api.sendMessage(chatId, t(lang, 'analyze_pick_brand'), { keyboard: ANALYZE_BRAND_KEYBOARD })
+        return
       case '/digest': {
         const enabled = toggleDigest(this.db, chatId)
         await this.api.sendMessage(chatId, enabled ? t(lang, 'digest_on', { time: this.config.digestTime }) : t(lang, 'digest_off'))
@@ -223,6 +235,31 @@ export class BotHandlers {
       return
     }
 
+    if (data === 'analyze:menu') {
+      await this.api.answerCallback(callbackId)
+      await this.api.sendMessage(chatId, t(user.lang, 'analyze_pick_brand'), { keyboard: ANALYZE_BRAND_KEYBOARD })
+      return
+    }
+
+    if (data.startsWith('abrand:')) {
+      const brand: Brand = data.slice(7) === 'antam' ? 'antam' : 'emasku'
+      await this.api.answerCallback(callbackId)
+      if (brand === 'antam') {
+        // Antam is quoted per gram, same shortcut as the /watch wizard.
+        await this.sendAnalysis(chatId, user.lang, brand, 1)
+      } else {
+        await this.api.sendMessage(chatId, t(user.lang, 'analyze_pick_size'), { keyboard: sizeKeyboard('asize') })
+      }
+      return
+    }
+
+    if (data.startsWith('asize:')) {
+      const gramasi = Number(data.slice(6))
+      await this.api.answerCallback(callbackId)
+      if (EMASKU_SIZES.includes(gramasi)) await this.sendAnalysis(chatId, user.lang, 'emasku', gramasi)
+      return
+    }
+
     if (data === 'price:all') {
       await this.api.answerCallback(callbackId)
       const market = await this.market()
@@ -255,6 +292,20 @@ export class BotHandlers {
     }
 
     await this.api.answerCallback(callbackId)
+  }
+
+  private async sendAnalysis(chatId: string, lang: Lang, brand: Brand, gramasi: number): Promise<void> {
+    const market = await this.market()
+    const bp = market ? brandPrices(market, brand) : null
+    const size = market ? priceOf(market, brand, gramasi) : null
+    if (!bp || !size) {
+      await this.api.sendMessage(chatId, t(lang, 'error_generic'))
+      return
+    }
+    const timing = buildTimingReport(mergedDaily(this.db, brand, gramasi), size)
+    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, bp.source, size, timing), {
+      keyboard: [[{ text: t(lang, 'analyze_btn_again'), callback_data: 'analyze:menu' }]],
+    })
   }
 
   private async askTarget(chatId: string, lang: Lang, brand: Brand, gramasi: number): Promise<void> {

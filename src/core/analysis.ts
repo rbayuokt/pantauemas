@@ -1,7 +1,8 @@
-import type { AnalysisReport, DayPrice, DriverInfo, SizePrice } from '../types.js'
+import type { AnalysisReport, DayPrice, DriverInfo, SizePrice, TimingReport, TimingSignal } from '../types.js'
 import type { DailyClose } from '../sources/yahoo.js'
 
 const PERCENTILE_WINDOW_DAYS = 90
+const DIP_WINDOW_DAYS = 14
 
 function movingAverage(series: number[], window: number): number | null {
   if (series.length < window) return null
@@ -63,4 +64,50 @@ export function buildReport(daily: DayPrice[], current: SizePrice, driver?: Driv
   }
 
   return { sampleDays: window.length, cheaperThanPct, ma7, ma30, trend, spreadPct, verdict, driver: driver ?? undefined }
+}
+
+/**
+ * The /analyze view: buildReport plus range context and a small checklist of
+ * yes/no buy signals. Still no prediction; each signal only asks whether today
+ * looks cheap against recorded history, and each is shown to the user so the
+ * verdict is never a black box. Signals without enough history are left out,
+ * and no verdict is given until at least 3 can be evaluated.
+ */
+export function buildTimingReport(daily: DayPrice[], current: SizePrice, driver?: DriverInfo | null): TimingReport {
+  const report = buildReport(daily, current, driver)
+  const window = daily.filter((d) => d.price > 0).slice(-PERCENTILE_WINDOW_DAYS)
+  const prices = window.map((d) => d.price)
+
+  let low90: number | null = null
+  let high90: number | null = null
+  let rangePosPct: number | null = null
+  if (window.length >= 20) {
+    low90 = Math.min(...prices)
+    high90 = Math.max(...prices)
+    rangePosPct = high90 > low90 ? ((current.price - low90) / (high90 - low90)) * 100 : 50
+  }
+
+  const dipWindow = prices.slice(-DIP_WINDOW_DAYS)
+  let dropFromHigh14Pct: number | null = null
+  if (dipWindow.length >= 5) {
+    const high14 = Math.max(...dipWindow)
+    dropFromHigh14Pct = ((high14 - current.price) / high14) * 100
+  }
+
+  const signals: TimingSignal[] = []
+  if (report.cheaperThanPct !== null) signals.push({ key: 'percentile', pass: report.cheaperThanPct >= 60 })
+  if (rangePosPct !== null) signals.push({ key: 'range', pass: rangePosPct <= 35 })
+  if (report.ma7 !== null) signals.push({ key: 'momentum', pass: current.price <= report.ma7 })
+  if (dropFromHigh14Pct !== null) signals.push({ key: 'dip', pass: dropFromHigh14Pct >= 1 })
+
+  const score = signals.filter((s) => s.pass).length
+  const maxScore = signals.length
+  let timing: TimingReport['timing'] = null
+  if (maxScore >= 3) {
+    if (score >= maxScore * 0.75) timing = 'good'
+    else if (score >= maxScore * 0.5) timing = 'ok'
+    else timing = 'wait'
+  }
+
+  return { report, low90, high90, rangePosPct, dropFromHigh14Pct, signals, score, maxScore, timing }
 }

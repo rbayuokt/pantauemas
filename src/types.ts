@@ -80,3 +80,24 @@ export interface AnalysisReport {
   verdict: 'CHEAP' | 'NEUTRAL' | 'EXPENSIVE' | null
   driver?: DriverInfo
 }
+
+/** One yes/no buy check; the copy layer turns the key into a translated label. */
+export interface TimingSignal {
+  key: 'percentile' | 'range' | 'momentum' | 'dip'
+  pass: boolean
+}
+
+export interface TimingReport {
+  report: AnalysisReport
+  low90: number | null
+  high90: number | null
+  /** Where today sits in the 90-day range: 0 = at the low, 100 = at the high. */
+  rangePosPct: number | null
+  /** How far today is below the 14-day high, in percent (0 = at the high). */
+  dropFromHigh14Pct: number | null
+  /** Signals with enough history to evaluate; empty when the series is too short. */
+  signals: TimingSignal[]
+  score: number
+  maxScore: number
+  timing: 'good' | 'ok' | 'wait' | null
+}

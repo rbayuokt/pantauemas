@@ -30,6 +30,10 @@ What it does:
   verdict (CHEAP / NEUTRAL / EXPENSIVE).
 - **Full price board**: /price shows your sizes, one tap expands to every size
   of every brand, each labeled with the source it came from.
+- **Buy-timing check**: /analyze answers "is now a good time?" with pure
+  statistics: the 90-day range, percentile, trend, and a transparent
+  4-signal checklist that scores today into a green / yellow / red verdict.
+  No AI, no prediction, every signal shown.
 - **ntfy channel**: optional second alert path via the free ntfy app. Target
   hits arrive as urgent pushes that cut through silent mode. Each user gets
   their own private topic with a one-tap copy button.
@@ -63,7 +67,7 @@ More detail in [`docs/`](docs/):
 | Scheduler | Built-in WIB clock loop inside the bot process |
 | Market data | HRTA Gold API, EmasKITA HTML (fallback), Aneka Logam (Antam), Yahoo Finance (gold + USD/IDR) |
 | Container | Docker + docker compose, `node:22-alpine` |
-| Tests | Node's built-in test runner (28 tests, in-memory SQLite) |
+| Tests | Node's built-in test runner (31 tests, in-memory SQLite) |
 
 ## Setup and run
 
