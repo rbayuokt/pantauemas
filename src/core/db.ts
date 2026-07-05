@@ -44,6 +44,18 @@ CREATE TABLE IF NOT EXISTS backfill (
   PRIMARY KEY (date, brand, gramasi)
 );
 
+CREATE TABLE IF NOT EXISTS spot (
+  date TEXT PRIMARY KEY,
+  gold_usd REAL NOT NULL,
+  usdidr REAL NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS spot_calls (
+  month TEXT PRIMARY KEY,
+  calls INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS dip_state (
   brand TEXT NOT NULL DEFAULT 'emasku',
   gramasi REAL NOT NULL,

@@ -2,6 +2,7 @@ import type { Config } from '../config.js'
 import type { TelegramApi } from '../bot/api.js'
 import { digestMessage, type DigestSection } from '../bot/copy.js'
 import { buildReport, computeDriver } from '../core/analysis.js'
+import { refreshSpot } from '../core/spot.js'
 import type { Db } from '../core/db.js'
 import { digestUsers, listWatches, mergedDaily, storeMarket } from '../core/store.js'
 import { nearestTargetBelowPrice } from '../core/targets.js'
@@ -24,6 +25,7 @@ async function fetchDriver(): Promise<DriverInfo | null> {
 }
 
 export async function runDigest(db: Db, api: TelegramApi, config: Config): Promise<void> {
+  await refreshSpot(db, config.metalpriceApiKey).catch((err) => log(`spot refresh failed: ${err}`))
   const market = await fetchMarket()
   storeMarket(db, market)
   const driver = await fetchDriver()

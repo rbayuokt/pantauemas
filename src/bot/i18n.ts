@@ -285,6 +285,10 @@ const MESSAGES = {
     en: '🔴 <b>Pricey by recent standards.</b> If you can wait, patience usually pays. Set a /watch target and let me do the waiting.',
     id: '🔴 <b>Tergolong mahal dibanding hari-hari terakhir.</b> Kalau bisa nunggu, sabar biasanya lebih untung. Pasang target /watch, biar aku yang nungguin.',
   },
+  analyze_world: {
+    en: 'World gold {gold}/oz · USD/IDR {fx}',
+    id: 'Emas dunia {gold}/oz · kurs USD/IDR {fx}',
+  },
   analyze_no_history: {
     en: 'I don\'t have enough price history for this size yet to judge the timing. Give me a few days of watching and ask again 🙏',
     id: 'Riwayat harga ukuran ini belum cukup buat nilai timingnya. Kasih aku beberapa hari buat mantau, terus tanya lagi ya 🙏',

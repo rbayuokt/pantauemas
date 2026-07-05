@@ -1,6 +1,7 @@
 import type { Config } from '../config.js'
 import type { Db } from '../core/db.js'
 import { detectDip } from '../core/dip.js'
+import { refreshSpot } from '../core/spot.js'
 import {
   allWatches, fireWatch, getDipState, mergedDaily, rearmWatch, setDipState, storeMarket, watchedCombos,
 } from '../core/store.js'
@@ -35,6 +36,8 @@ async function deliver(
 }
 
 export async function runTick(db: Db, api: TelegramApi, config: Config): Promise<void> {
+  // Scheduled jobs are the only place the metalpriceapi quota is spent.
+  await refreshSpot(db, config.metalpriceApiKey).catch((err) => log(`spot refresh failed: ${err}`))
   const market = await fetchMarket()
   storeMarket(db, market)
   const summary = market.brands

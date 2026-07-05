@@ -12,6 +12,8 @@ export interface Config {
   /** ntfy server used for every user's personal topic (self-hostable) */
   ntfyServer: string
   ntfyToken?: string
+  /** metalpriceapi.com key for the daily world-spot snapshot (optional). */
+  metalpriceApiKey: string | null
 }
 
 // Tiny .env loader so we stay zero-dependency. Existing env vars win.
@@ -47,5 +49,6 @@ export function loadConfig(): Config {
     dipThresholdPct: num(e.DIP_THRESHOLD_PCT, 2),
     ntfyServer: e.NTFY_SERVER ?? 'https://ntfy.sh',
     ntfyToken: e.NTFY_TOKEN || undefined,
+    metalpriceApiKey: e.METALPRICE_API_KEY || null,
   }
 }

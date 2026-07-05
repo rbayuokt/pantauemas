@@ -2,9 +2,11 @@ import { randomBytes } from 'node:crypto'
 import type { Config } from '../config.js'
 import type { Db } from '../core/db.js'
 import { buildTimingReport } from '../core/analysis.js'
+import { latestSpot, spotDriver } from '../core/spot.js'
 import {
   addWatch, deleteWatch, ensureUser, getUser, listWatches, MAX_WATCHES_PER_USER, mergedDaily, setLang, setNtfyTopic, toggleDigest,
 } from '../core/store.js'
+import { backfillOne } from '../jobs/backfill.js'
 import { brandPrices, fetchMarket, priceOf } from '../sources/market.js'
 import type { Brand, Lang, Market } from '../types.js'
 import { gram, log, parsePriceInput, pct, rupiah } from '../util.js'
@@ -302,8 +304,22 @@ export class BotHandlers {
       await this.api.sendMessage(chatId, t(lang, 'error_generic'))
       return
     }
-    const timing = buildTimingReport(mergedDaily(this.db, brand, gramasi), size)
-    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, bp.source, size, timing), {
+    let daily = mergedDaily(this.db, brand, gramasi)
+    // Too short for a verdict (e.g. the one-time backfill was never run):
+    // synthesize this size's history on the spot instead of shrugging.
+    if (daily.filter((d) => d.price > 0).length < 20) {
+      try {
+        await backfillOne(this.db, brand, size)
+        daily = mergedDaily(this.db, brand, gramasi)
+      } catch (err) {
+        log(`on-demand backfill for ${brand} ${gram(gramasi)} failed: ${err}`)
+      }
+    }
+    // World context comes from the daily metalpriceapi snapshot stored by the
+    // scheduler; reading it here costs zero API calls no matter how often
+    // users tap /analyze.
+    const timing = buildTimingReport(daily, size, spotDriver(this.db))
+    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, bp.source, size, timing, latestSpot(this.db)), {
       keyboard: [[{ text: t(lang, 'analyze_btn_again'), callback_data: 'analyze:menu' }]],
     })
   }

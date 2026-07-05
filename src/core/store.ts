@@ -162,6 +162,48 @@ export function replaceBackfill(db: Db, brand: Brand, gramasi: number, rows: Arr
   for (const r of rows) stmt.run(r.date, brand, gramasi, Math.round(r.price))
 }
 
+// ---- world spot snapshots (metalpriceapi, one row per WIB day) ----
+
+export interface SpotRow {
+  /** WIB date, YYYY-MM-DD */
+  date: string
+  goldUsd: number
+  usdidr: number
+}
+
+export function getSpot(db: Db, date: string): SpotRow | null {
+  const row = db.prepare('SELECT date, gold_usd, usdidr FROM spot WHERE date = ?').get(date) as
+    | { date: string; gold_usd: number; usdidr: number }
+    | undefined
+  return row ? { date: row.date, goldUsd: Number(row.gold_usd), usdidr: Number(row.usdidr) } : null
+}
+
+/** The n most recent snapshots, oldest first. */
+export function latestSpots(db: Db, n: number): SpotRow[] {
+  const rows = db.prepare('SELECT date, gold_usd, usdidr FROM spot ORDER BY date DESC LIMIT ?').all(n) as Array<{
+    date: string
+    gold_usd: number
+    usdidr: number
+  }>
+  return rows.map((r) => ({ date: r.date, goldUsd: Number(r.gold_usd), usdidr: Number(r.usdidr) })).reverse()
+}
+
+export function storeSpot(db: Db, row: SpotRow): void {
+  db.prepare('INSERT OR REPLACE INTO spot (date, gold_usd, usdidr, created_at) VALUES (?, ?, ?, ?)')
+    .run(row.date, row.goldUsd, row.usdidr, new Date().toISOString())
+}
+
+/** Attempts (not just successes) against the metalpriceapi quota this month. */
+export function countSpotCalls(db: Db, month: string): number {
+  const row = db.prepare('SELECT calls FROM spot_calls WHERE month = ?').get(month) as { calls: number } | undefined
+  return row ? Number(row.calls) : 0
+}
+
+export function bumpSpotCalls(db: Db, month: string): void {
+  db.prepare('INSERT INTO spot_calls (month, calls) VALUES (?, 1) ON CONFLICT(month) DO UPDATE SET calls = calls + 1')
+    .run(month)
+}
+
 // ---- dip state ----
 
 export function getDipState(db: Db, brand: Brand, gramasi: number): DipStateRow | null {

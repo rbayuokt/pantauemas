@@ -131,7 +131,14 @@ const SIGNAL_KEY: Record<TimingSignal['key'], MessageKey> = {
   dip: 'analyze_sig_dip',
 }
 
-export function analyzeMessage(lang: Lang, brand: Brand, source: PriceSource, size: SizePrice, timing: TimingReport): string {
+export function analyzeMessage(
+  lang: Lang,
+  brand: Brand,
+  source: PriceSource,
+  size: SizePrice,
+  timing: TimingReport,
+  spot?: { goldUsd: number; usdidr: number } | null,
+): string {
   const r = timing.report
   const lines = [t(lang, 'analyze_title', { size: comboLabel(brand, size.gramasi), date: wibDateLabel(lang) })]
   lines.push(t(lang, 'analyze_price_line', { price: rupiah(size.price), buyback: rupiah(size.buybackPrice), spread: pct(r.spreadPct, lang) }))
@@ -143,6 +150,13 @@ export function analyzeMessage(lang: Lang, brand: Brand, source: PriceSource, si
   if (timing.dropFromHigh14Pct !== null && timing.dropFromHigh14Pct >= 0.05) {
     lines.push(t(lang, 'analyze_off_high', { drop: pct(timing.dropFromHigh14Pct, lang) }))
   }
+  if (spot) {
+    lines.push(t(lang, 'analyze_world', {
+      gold: '$' + Math.round(spot.goldUsd).toLocaleString('en-US'),
+      fx: rupiah(spot.usdidr),
+    }))
+  }
+  if (r.driver) lines.push(driverLine(lang, r.driver.goldChangePct, r.driver.fxChangePct))
   const blocks = [lines.join('\n')]
 
   if (timing.timing !== null) {

@@ -29,6 +29,19 @@ price.
 | `DIP_LOOKBACK_DAYS` | `14` | Window for the dip detector's reference high. |
 | `DIP_THRESHOLD_PCT` | `2` | Drop from that high that counts as a dip. At gold's usual volatility, 2% over two weeks is a real move; 1% would ping monthly noise. |
 
+### metalpriceapi.com (optional)
+
+| Var | Default | |
+|---|---|---|
+| `METALPRICE_API_KEY` | - | Enables a daily world gold + USD/IDR snapshot, shown as context lines in /analyze. |
+
+The free plan allows 100 API calls a month. The bot's budget discipline:
+one call per WIB day at most (the first scheduled tick or digest that finds
+no snapshot for today), and a hard ledger in the database that refuses any
+call past 80 attempts per month, even across restarts and failures. User
+commands only read stored snapshots, so chat activity can never spend quota.
+Without a key, /analyze simply omits the world context lines.
+
 ### ntfy (optional, self-host only)
 
 Users enable ntfy themselves with /ntfy; the bot generates a personal random

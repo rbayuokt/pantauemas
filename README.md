@@ -65,9 +65,9 @@ More detail in [`docs/`](docs/):
 | Extra pushes | Per-user [ntfy](https://ntfy.sh) topics via /ntfy |
 | Storage | SQLite at `data/pantauemas.db` (users, watches, prices, backfill) |
 | Scheduler | Built-in WIB clock loop inside the bot process |
-| Market data | HRTA Gold API, EmasKITA HTML (fallback), Aneka Logam (Antam), Yahoo Finance (gold + USD/IDR) |
+| Market data | HRTA Gold API, EmasKITA HTML (fallback), Aneka Logam (Antam), Yahoo Finance (gold + USD/IDR), metalpriceapi.com (optional daily spot snapshot, quota-capped) |
 | Container | Docker + docker compose, `node:22-alpine` |
-| Tests | Node's built-in test runner (31 tests, in-memory SQLite) |
+| Tests | Node's built-in test runner (37 tests, in-memory SQLite) |
 
 ## Setup and run
 

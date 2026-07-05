@@ -104,6 +104,22 @@ It has been stable for years, but it's unofficial. Both uses degrade gracefully:
 the digest drops the driver line, and backfill refuses to write anything with
 fewer than 30 overlapping days rather than produce garbage history.
 
+## metalpriceapi.com (optional, world spot snapshot)
+
+```
+GET https://api.metalpriceapi.com/v1/latest?api_key=...&base=USD&currencies=IDR,XAU
+```
+
+One call returns both world gold (`USDXAU`, USD per troy oz) and USD/IDR.
+Stored as one row per WIB day in the `spot` table and surfaced as the
+"World gold $X/oz" and "Mover" lines in /analyze.
+
+The free plan is 100 calls/month, so calls are strictly rationed: only
+scheduled jobs (tick/digest) may call it, only when today's row is missing
+(≤31 successful calls/month), and a `spot_calls` ledger hard-stops at 80
+attempts/month as a failsafe. /analyze reads the stored rows only. No key
+configured means this source is simply skipped.
+
 ## Sources considered and rejected
 
 | Source | Why not |

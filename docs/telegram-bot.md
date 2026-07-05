@@ -57,15 +57,21 @@ Same brand/size picker as /watch, but instead of setting a target it answers
 
 - Context lines: current price and spread, the 90-day low/high, the
   cheaper-than percentile, the 7d-vs-30d trend, and how far today sits below
-  the 14-day high.
+  the 14-day high. With `METALPRICE_API_KEY` set, also world gold and USD/IDR
+  with a day-over-day "mover" attribution - read from the daily snapshot the
+  scheduler stores, never fetched per tap (the free plan is 100 calls/month;
+  see [configuration](configuration.md)).
 - A checklist of four yes/no signals, each shown with a ✅/⬜ so the verdict is
   never a black box: cheaper than 60%+ of the last 90 days, in the bottom 35%
   of the 90-day range, at or below the 7-day average, and dipped 1%+ off the
   14-day high.
 - The score maps to a verdict: 3-4 green "good day to buy", 2 yellow
-  "decent, not special", 0-1 red "pricey, patience pays". Signals without
-  enough history are skipped, and fewer than three evaluable signals means no
-  verdict at all, just an honest "not enough history yet".
+  "decent, not special", 0-1 red "pricey, patience pays".
+- If the requested size has under 20 days of history (say the one-time
+  backfill was never run), the bot backfills that one series on the spot from
+  world gold and USD/IDR, exactly like `npm run backfill` does, then answers
+  normally. Only if that synthesis also fails (Yahoo down) does it fall back
+  to an honest "not enough history yet".
 
 Every message ends with the source and a "statistics, not financial advice"
 footnote.
