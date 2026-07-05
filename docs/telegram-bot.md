@@ -10,7 +10,7 @@ most frequent thing anyone does.
 
 | Command | What it does |
 |---|---|
-| /price | Current prices for the sizes you watch (or sensible defaults), plus a button that expands to every size of every brand with its source |
+| /price | Current prices for the sizes you watch (or sensible defaults), plus a button that expands to the full board: every size of every source, one block per source, so Antam's price differences between Logam Mulia, IndoGold, Galeri 24 and Aneka Logam stay visible |
 | /analyze | Pick a brand and size, get a statistical buy-timing read: 90-day range, percentile, trend, and a transparent 4-signal checklist with a verdict |
 | /watch | Wizard: pick a brand and size, type a target price |
 | /targets | List your targets with status, tap one to remove it |
@@ -56,14 +56,21 @@ restarts mid-wizard, the user just taps /watch again; nothing breaks.
 Same brand/size picker as /watch, but instead of setting a target it answers
 "is now a decent time to buy?" with statistics only, no prediction. The
 message leads with the verdict and a buy-confidence percentage, then breaks
-the detail into scannable sections (💰 price, 📈 last 90 days with a text
-gauge of where today sits in the range, 🌍 world market, 🎯 signals):
+the detail into scannable sections (💰 price, 🏷 today by source, 📈 last 90
+days with a text gauge of where today sits in the range, 🌍 world market,
+🎯 signals):
 
 - Buy confidence: a 0-100% blend of the same statistics behind the signals -
   cheaper-than percentile (40%), position in the 90-day range (30%), distance
   from the 7-day average (15%), and dip depth off the 14-day high (15%).
   Continuous where the checklist is yes/no, so two "3/4" days can still read
   62% vs 85%.
+- By source (brands with 2+ live sources, i.e. Antam): the same size quoted
+  by every source that responded, sorted cheapest first with the premium over
+  the cheapest, plus which source pays the best buyback today. The verdict
+  itself stays single because the history behind the statistics is one daily
+  series; what differs between sources is today's price, and that's what the
+  block shows.
 - Context: current price and spread, the 90-day low/high, the cheaper-than
   percentile, the 7d-vs-30d trend, and how far today sits below the 14-day
   high. With `METALPRICE_API_KEY` set, also world gold and USD/IDR with a

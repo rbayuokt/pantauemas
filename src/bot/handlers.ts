@@ -319,7 +319,15 @@ export class BotHandlers {
     // scheduler; reading it here costs zero API calls no matter how often
     // users tap /analyze.
     const timing = buildTimingReport(daily, size, spotDriver(this.db))
-    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, brandSources(bp), size, timing, latestSpot(this.db)), {
+    // Same-size quotes from every source that responded, so Antam's /analyze
+    // can say where today is cheapest. Single-source brands skip the block.
+    const bySource = (market?.sourceQuotes ?? [])
+      .filter((q) => q.brand === brand)
+      .flatMap((q) => {
+        const s = q.sizes.find((x) => x.gramasi === gramasi)
+        return s ? [{ source: q.source, price: s.price, buybackPrice: s.buybackPrice }] : []
+      })
+    await this.api.sendMessage(chatId, analyzeMessage(lang, brand, brandSources(bp), size, timing, latestSpot(this.db), bySource), {
       keyboard: [[{ text: t(lang, 'analyze_btn_again'), callback_data: 'analyze:menu' }]],
     })
   }

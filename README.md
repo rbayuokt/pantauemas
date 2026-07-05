@@ -30,12 +30,16 @@ What it does:
   last 90 days were more expensive than today, the trend, the buy/buyback
   spread, whether world gold or the rupiah moved the price, and a one-word
   verdict (CHEAP / NEUTRAL / EXPENSIVE).
-- **Full price board**: /price shows your sizes, one tap expands to every size
-  of every brand, each labeled with the source it came from.
+- **Full price board**: /price shows your sizes, one tap expands to every
+  size of every source — Antam listed per source (official Logam Mulia,
+  IndoGold, Galeri 24, Aneka Logam) so the price differences between shops
+  stay visible.
 - **Buy-timing check**: /analyze answers "is now a good time?" with pure
   statistics: the 90-day range, percentile, trend, and a transparent
   4-signal checklist that scores today into a green / yellow / red verdict.
-  No AI, no prediction, every signal shown.
+  For Antam it also compares today's price across all live sources, cheapest
+  first, including who pays the best buyback. No AI, no prediction, every
+  signal shown.
 - **ntfy channel**: optional second alert path via the free ntfy app. Target
   hits arrive as urgent pushes that cut through silent mode. Each user gets
   their own private topic with a one-tap copy button.

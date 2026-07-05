@@ -193,6 +193,10 @@ const MESSAGES = {
     en: '• <b>{size}</b>: {price} · buyback {buyback}',
     id: '• <b>{size}</b>: {price} · buyback {buyback}',
   },
+  price_line_nobb: {
+    en: '• <b>{size}</b>: {price}',
+    id: '• <b>{size}</b>: {price}',
+  },
   price_all_title: {
     en: '<b>All gold prices today</b> ({date})',
     id: '<b>Semua harga emas hari ini</b> ({date})',
@@ -248,6 +252,22 @@ const MESSAGES = {
   analyze_price_line: {
     en: '• Buy: {price}\n• Buyback: {buyback} (spread {spread})',
     id: '• Beli: {price}\n• Buyback: {buyback} (spread {spread})',
+  },
+  analyze_sec_sources: {
+    en: '🏷 <b>Today by source</b>',
+    id: '🏷 <b>Harga per sumber</b>',
+  },
+  analyze_src_line_cheapest: {
+    en: '• {source}: {price} ← cheapest',
+    id: '• {source}: {price} ← termurah',
+  },
+  analyze_src_line: {
+    en: '• {source}: {price} (+{diff})',
+    id: '• {source}: {price} (+{diff})',
+  },
+  analyze_best_buyback: {
+    en: '• Best buyback: {source} ({price})',
+    id: '• Buyback terbaik: {source} ({price})',
   },
   analyze_sec_range: {
     en: '📈 <b>Last 90 days</b>',

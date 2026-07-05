@@ -70,20 +70,25 @@ was Rp 2.670.000 official, Rp 2.738.000 at IndoGold, Rp 2.777.000 at
 Galeri 24), so the bot reads up to four sources and labels every number with
 where it came from.
 
-The strategy, implemented in `sources/market.ts`:
+The strategy, implemented in `sources/market.ts`: all four are fetched in
+parallel, then split two ways.
+
+The **merged quote** drives alerts, /watch and storage:
 
 1. **Logam Mulia (official)** provides the sell prices whenever it responds.
-2. The first shop source that responds — **IndoGold → Galeri 24 → Aneka
+2. The highest-priority shop that responded — **IndoGold → Galeri 24 → Aneka
    Logam** — fills in the buyback figures, since the official table publishes
    none. The `prices` table records both (`source`, `buyback_source`), and
    messages credit both ("Sumber: Logam Mulia (resmi), IndoGold").
-3. When the official fetch fails, the winning shop quote is used wholesale.
-   When every shop fails, Antam is skipped for that round (the message layer
-   needs a buyback figure); EMASKU watches are unaffected.
+3. When the official fetch fails, that shop quote is used wholesale. When
+   every shop fails, Antam is skipped for that round (the message layer needs
+   a buyback figure); EMASKU watches are unaffected.
 
-Watches and /analyze stay per-gram (1g) for Antam, but the full /price board
-now lists every denomination both the official table and the buyback source
-know (0.5–100g).
+The **raw per-source quotes** are kept alongside (`Market.sourceQuotes`) and
+power the display: the full /price board lists Antam one block per source
+instead of merging them away, and /analyze adds a "today by source" section —
+same size quoted by every live source, cheapest first, plus who pays the best
+buyback. Watches and /analyze verdicts stay per-gram (1g) for Antam.
 
 ### Logam Mulia — official, via Jina Reader
 

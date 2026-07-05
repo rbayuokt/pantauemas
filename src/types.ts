@@ -25,6 +25,12 @@ export interface Market {
   fetchedAt: string
   /** Brands that responded this fetch; a brand whose source is down is simply absent. */
   brands: BrandPrices[]
+  /**
+   * One raw quote per source that responded, unmerged, so the full price
+   * board can list Antam per source and /analyze can compare them.
+   * Sell-only quotes (official Logam Mulia) carry buybackPrice 0.
+   */
+  sourceQuotes?: BrandPrices[]
 }
 
 export interface DayPrice {

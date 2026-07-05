@@ -145,6 +145,14 @@ function rangeGauge(posPct: number): string {
   return '▓'.repeat(filled) + '░'.repeat(10 - filled)
 }
 
+/** One source's quote for the size being analyzed, for the by-source comparison. */
+export interface SourceQuote {
+  source: PriceSource
+  price: number
+  /** 0 when the source publishes no buyback (official Logam Mulia). */
+  buybackPrice: number
+}
+
 export function analyzeMessage(
   lang: Lang,
   brand: Brand,
@@ -152,6 +160,7 @@ export function analyzeMessage(
   size: SizePrice,
   timing: TimingReport,
   spot?: { goldUsd: number; usdidr: number } | null,
+  bySource?: SourceQuote[],
 ): string {
   const r = timing.report
   // Answer first: title, verdict, then the sections for whoever wants detail.
@@ -179,6 +188,29 @@ export function analyzeMessage(
     t(lang, 'analyze_sec_price'),
     t(lang, 'analyze_price_line', { price: rupiah(size.price), buyback: rupiah(size.buybackPrice), spread: pct(r.spreadPct, lang) }),
   ].join('\n'))
+
+  // Where to actually buy today: only worth a block when sources disagree.
+  if (bySource && bySource.length >= 2) {
+    const sorted = [...bySource].sort((a, b) => a.price - b.price)
+    const cheapest = sorted[0]!
+    const lines = [t(lang, 'analyze_sec_sources')]
+    for (const q of sorted) {
+      lines.push(
+        q === cheapest
+          ? t(lang, 'analyze_src_line_cheapest', { source: sourceName(q.source), price: rupiah(q.price) })
+          : t(lang, 'analyze_src_line', {
+              source: sourceName(q.source),
+              price: rupiah(q.price),
+              diff: pct(((q.price - cheapest.price) / cheapest.price) * 100, lang),
+            }),
+      )
+    }
+    const bestBuyback = bySource.filter((q) => q.buybackPrice > 0).sort((a, b) => b.buybackPrice - a.buybackPrice)[0]
+    if (bestBuyback) {
+      lines.push(t(lang, 'analyze_best_buyback', { source: sourceName(bestBuyback.source), price: rupiah(bestBuyback.buybackPrice) }))
+    }
+    blocks.push(lines.join('\n'))
+  }
 
   const range: string[] = []
   if (timing.low90 !== null && timing.high90 !== null) {
@@ -227,13 +259,23 @@ export function priceMessage(lang: Lang, market: Market, combos: Array<{ brand: 
   return lines.join('\n')
 }
 
-/** The full board: every size of every brand the market fetch returned. */
+/**
+ * The full board: every size of every source the market fetch returned, one
+ * block per source so Antam's price differences stay visible instead of
+ * being merged away. Sell-only quotes (official Logam Mulia) drop the
+ * buyback part of the line.
+ */
 export function allPricesMessage(lang: Lang, market: Market): string {
   const blocks = [t(lang, 'price_all_title', { date: wibDateLabel(lang, market.fetchedAt) })]
-  for (const bp of market.brands) {
-    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${[...new Set(brandSources(bp).map(sourceName))].join(', ')}`]
+  const quotes = market.sourceQuotes?.length ? market.sourceQuotes : market.brands
+  for (const bp of quotes) {
+    const lines = [`<b>${BRAND_LABEL[bp.brand]}</b> · ${sourceName(bp.source)}`]
     for (const s of [...bp.sizes].sort((a, b) => a.gramasi - b.gramasi)) {
-      lines.push(t(lang, 'price_line', { size: gram(s.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) }))
+      lines.push(
+        s.buybackPrice > 0
+          ? t(lang, 'price_line', { size: gram(s.gramasi), price: rupiah(s.price), buyback: rupiah(s.buybackPrice) })
+          : t(lang, 'price_line_nobb', { size: gram(s.gramasi), price: rupiah(s.price) }),
+      )
     }
     blocks.push(lines.join('\n'))
   }
