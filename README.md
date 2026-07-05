@@ -2,38 +2,44 @@
 
 # PantauEmas
 
-A free Telegram bot that watches Indonesian physical gold (EMASKU) prices for
-you and your friends. Everyone sets their own buy targets in their own language
+A free Telegram bot that watches Indonesian physical gold prices for you and
+your friends. Everyone sets their own buy targets in their own language
 (English or Bahasa Indonesia), and the bot pings each person the moment the
 price drops into their zone. No trading, no prediction, just "it's cheap, go
 get it."
 
 ## Project overview
 
-The problem: gold shops publish a new price every day, and unless you check
-manually you never know you missed your buy price until it's back up.
+Gold shops publish a new price every day. Unless you check manually, you find
+out you missed your buy price after it's already back up. This bot does the
+checking.
 
-PantauEmas is a multi-user bot that solves it with four pieces:
+What it does:
 
-- **Ladder targets per user**: everyone sets their own buy levels through a
-  chat wizard (/watch, pick a brand and size, type a price). A rung fires once
-  with an urgent push, then re-arms after the price recovers, so it never spams.
+- **Buy targets per user**: set your levels through a chat wizard (/watch,
+  pick a brand and size, type a price). A target fires once with an urgent
+  push, then re-arms after the price recovers, so it never spams.
 - **Two brands**: EMASKU (every bar size, via HRTA Gold's API) and LM Antam
   (per gram, current production, via Aneka Logam). Watch either or both.
 - **Dip detection**: a 2%+ drop below the 14-day high gets flagged to everyone
-  watching that bar size, even when it lands between their rungs. Targets are
-  guesses; this catches what they miss.
-- **Morning digest**: a daily summary per user with a cheapness read: what
-  share of the last 90 days were more expensive than today, the trend, the
-  buy/buyback spread, whether world gold or the rupiah moved the price, and a
-  one-word verdict (CHEAP / NEUTRAL / EXPENSIVE).
-- **Price history**: every size HRTA sells gets logged daily, and a one-time
-  `backfill` command reconstructs about a year of history per size so the
-  analysis works from day one.
+  watching that brand and size, even when it lands between their targets.
+  Targets are guesses; this catches what they miss.
+- **Morning digest**: a daily summary with a cheapness read: what share of the
+  last 90 days were more expensive than today, the trend, the buy/buyback
+  spread, whether world gold or the rupiah moved the price, and a one-word
+  verdict (CHEAP / NEUTRAL / EXPENSIVE).
+- **Full price board**: /price shows your sizes, one tap expands to every size
+  of every brand, each labeled with the source it came from.
+- **ntfy channel**: optional second alert path via the free ntfy app. Target
+  hits arrive as urgent pushes that cut through silent mode. Each user gets
+  their own private topic with a one-tap copy button.
+- **Price history**: both brands get logged daily, and a one-time `backfill`
+  command rebuilds about a year of history per brand and size, so the
+  analysis is useful from day one instead of after three months.
 
-One price check serves every user: the HRTA Gold API returns all bar sizes in
-a single call, so 1 user or 500 costs the same three requests a day.
-Everything runs on free tiers.
+One price check serves every user: the sources return all sizes in a single
+call each, so 1 user or 500 costs the same few requests a day. Everything
+runs on free tiers.
 
 More detail in [`docs/`](docs/):
 [architecture](docs/architecture.md) ·
@@ -52,12 +58,12 @@ More detail in [`docs/`](docs/):
 | Dependencies | Zero at runtime. Native `fetch` for HTTP, `node:sqlite` for storage |
 | Bot | Raw Telegram Bot API client, long polling, inline keyboards, no SDK |
 | i18n | English + Bahasa Indonesia, per-user, switchable with /language |
-| Extra pushes | Per-user [ntfy](https://ntfy.sh) topics via /ntfy: guided setup, one-tap topic copy, urgent priority on target hits |
+| Extra pushes | Per-user [ntfy](https://ntfy.sh) topics via /ntfy |
 | Storage | SQLite at `data/pantauemas.db` (users, watches, prices, backfill) |
 | Scheduler | Built-in WIB clock loop inside the bot process |
 | Market data | HRTA Gold API, EmasKITA HTML (fallback), Aneka Logam (Antam), Yahoo Finance (gold + USD/IDR) |
 | Container | Docker + docker compose, `node:22-alpine` |
-| Tests | Node's built-in test runner (25 tests, in-memory SQLite) |
+| Tests | Node's built-in test runner (28 tests, in-memory SQLite) |
 
 ## Setup and run
 
@@ -69,7 +75,7 @@ Needs Node 22.5+ (or just Docker).
 ```sh
 npm install
 cp .env.example .env    # paste TELEGRAM_BOT_TOKEN
-npm run backfill        # once: seeds ~1y of price history for every size
+npm run backfill        # once: seeds ~1y of price history per brand and size
 npm run bot             # long-running: bot + scheduled checks
 ```
 
