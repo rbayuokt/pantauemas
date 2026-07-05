@@ -1,0 +1,23 @@
+{
+  "name": "pantauemas",
+  "version": "0.3.0",
+  "description": "Telegram bot that watches Indonesian physical gold (EMASKU) prices and pings you at your buy targets",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "bot": "tsx src/index.ts bot",
+    "tick": "tsx src/index.ts tick",
+    "digest": "tsx src/index.ts digest",
+    "backfill": "tsx src/index.ts backfill",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,82 @@
+export type Lang = 'en' | 'id'
+
+/** Gold brands the bot tracks. EMASKU has many bar sizes; Antam is tracked per gram. */
+export type Brand = 'emasku' | 'antam'
+
+export type PriceSource = 'hrta' | 'emaskita' | 'anekalogam'
+
+export interface SizePrice {
+  gramasi: number
+  price: number
+  buybackPrice: number
+}
+
+export interface BrandPrices {
+  brand: Brand
+  source: PriceSource
+  /** Price timestamp from the source (ISO). Falls back to fetch time when the source has none. */
+  createdAt: string
+  sizes: SizePrice[]
+}
+
+export interface Market {
+  fetchedAt: string
+  /** Brands that responded this fetch; a brand whose source is down is simply absent. */
+  brands: BrandPrices[]
+}
+
+export interface DayPrice {
+  /** WIB date, YYYY-MM-DD */
+  date: string
+  price: number
+  buybackPrice?: number
+  synthetic?: boolean
+}
+
+export interface UserRow {
+  chatId: string
+  lang: Lang
+  digestEnabled: boolean
+  ntfyTopic: string | null
+  createdAt: string
+}
+
+export interface WatchRow {
+  id: number
+  chatId: string
+  brand: Brand
+  gramasi: number
+  target: number
+  firedAt: string | null
+  firedPrice: number | null
+}
+
+export interface DipStateRow {
+  brand: Brand
+  gramasi: number
+  date: string
+  price: number
+  refHigh: number
+}
+
+export interface DipEvent {
+  refHigh: number
+  dropPct: number
+}
+
+export interface DriverInfo {
+  goldChangePct: number
+  fxChangePct: number
+}
+
+export interface AnalysisReport {
+  sampleDays: number
+  /** Share of the last ~90 days that were MORE expensive than today */
+  cheaperThanPct: number | null
+  ma7: number | null
+  ma30: number | null
+  trend: 'down' | 'up' | 'flat' | null
+  spreadPct: number
+  verdict: 'CHEAP' | 'NEUTRAL' | 'EXPENSIVE' | null
+  driver?: DriverInfo
+}
